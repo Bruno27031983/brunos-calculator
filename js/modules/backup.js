@@ -4,7 +4,8 @@
  */
 
 import { saveToIndexedDB, loadFromIndexedDB, isIndexedDBAvailable, getAllData } from './indexeddb.js';
-import { loadAllData, saveAllData, STORAGE_KEYS } from './storage.js';
+import { loadAllData, saveAllData } from './storage.js';
+import { STORAGE_KEYS } from './constants.js';
 
 // Konštanty pre backup
 const BACKUP_PREFIX = 'backup_';

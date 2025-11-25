@@ -685,3 +685,108 @@ body.dark-mode .toast-btn-cancel:hover {
         padding: 20px;
     }
 }
+
+/* ===========================
+   Persistence Status Indicator
+   =========================== */
+
+.persistence-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 10px 0;
+    padding: 8px 16px;
+    background: #f9f9f9;
+    border-radius: 20px;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 13px;
+    transition: all 0.3s;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ccc;
+    animation: pulse 2s infinite;
+    transition: all 0.3s;
+}
+
+.status-dot.granted {
+    background: #4CAF50;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+}
+
+.status-dot.denied {
+    background: #f44336;
+    box-shadow: 0 0 8px rgba(244, 67, 54, 0.5);
+}
+
+.status-dot.unsupported {
+    background: #9E9E9E;
+    animation: none;
+}
+
+.status-text {
+    color: #555;
+    font-weight: 500;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Dark mode support */
+body.dark-mode .persistence-status {
+    background: #2d2d2d;
+}
+
+body.dark-mode .status-text {
+    color: #e0e0e0;
+}
+
+/* ===========================
+   Time Input Clock Icons
+   =========================== */
+
+.time-input-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.time-clock-icon {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 2px 4px;
+    background: transparent;
+    border: none;
+    opacity: 0.6;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.time-clock-icon:hover {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.2);
+}
+
+.time-clock-icon:active {
+    transform: translateY(-50%) scale(0.9);
+}
+
+body.dark-mode .time-clock-icon {
+    filter: brightness(1.5);
+}
