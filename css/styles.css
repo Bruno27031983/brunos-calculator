@@ -149,6 +149,20 @@ input[type="tel"], input[type="number"], input[type="text"] {
     background-color: #388e3c;
 }
 
+.backup-btn {
+    background-color: #2196F3;
+}
+
+.backup-btn:hover {
+    background-color: #1976D2;
+}
+
+.backup-container {
+    border-top: 2px solid #ddd;
+    padding-top: 15px;
+    margin-top: 15px;
+}
+
 .highlight {
     background-color: #ffcc00;
     color: #333;

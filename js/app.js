@@ -52,6 +52,21 @@ import {
     importFromExcel
 } from './modules/export.js';
 
+import {
+    saveBackup,
+    loadBackup,
+    restoreFromBackup,
+    listBackups,
+    autoBackup,
+    startAutoBackup,
+    stopAutoBackup,
+    exportBackupToFile,
+    importBackupFromFile,
+    getBackupStats
+} from './modules/backup.js';
+
+import { initDB } from './modules/indexeddb.js';
+
 /**
  * Hlavná trieda aplikácie
  */
@@ -70,6 +85,10 @@ class BrunosCalculator {
         // Debounce timer
         this.saveTimer = null;
 
+        // Backup
+        this.autoBackupInterval = null;
+        this.hasUnsavedChanges = false;
+
         // Bind metód
         this.handleTimeInput = this.handleTimeInput.bind(this);
         this.handleBreakInput = this.handleBreakInput.bind(this);
@@ -85,13 +104,25 @@ class BrunosCalculator {
         this.handleDecimalPlacesChange = this.handleDecimalPlacesChange.bind(this);
         this.handleEmployeeNameChange = this.handleEmployeeNameChange.bind(this);
         this.handleSettingsChange = this.handleSettingsChange.bind(this);
+        this.handleManualBackup = this.handleManualBackup.bind(this);
+        this.handleExportBackup = this.handleExportBackup.bind(this);
+        this.handleImportBackup = this.handleImportBackup.bind(this);
+        this.handleShowBackups = this.handleShowBackups.bind(this);
     }
 
     /**
      * Inicializácia aplikácie
      */
-    init() {
+    async init() {
         console.log('Inicializácia Bruno\'s Calculator...');
+
+        // Inicializácia IndexedDB
+        try {
+            await initDB();
+            console.log('✅ IndexedDB inicializovaná');
+        } catch (error) {
+            console.warn('⚠️ IndexedDB nie je dostupná:', error);
+        }
 
         // Načítanie dát
         this.loadData();
@@ -111,7 +142,16 @@ class BrunosCalculator {
         // Aktualizácia veľkosti dát
         updateDataSizeDisplay();
 
-        console.log('Aplikácia inicializovaná');
+        // Spustenie automatického zálohovania
+        this.startAutoBackupSystem();
+
+        // Nastavenie beforeunload ochrany
+        this.setupBeforeUnloadProtection();
+
+        // Vytvorenie prvotnej zálohy
+        await this.createInitialBackup();
+
+        console.log('✅ Aplikácia inicializovaná s backup ochranou');
     }
 
     /**
@@ -190,6 +230,17 @@ class BrunosCalculator {
                 btn.addEventListener('click', this.handleImportExcel);
             }
         });
+
+        // Backup tlačidlá
+        const manualBackupBtn = document.getElementById('manualBackupBtn');
+        const exportBackupBtn = document.getElementById('exportBackupBtn');
+        const importBackupBtn = document.getElementById('importBackupBtn');
+        const showBackupsBtn = document.getElementById('showBackupsBtn');
+
+        if (manualBackupBtn) manualBackupBtn.addEventListener('click', this.handleManualBackup);
+        if (exportBackupBtn) exportBackupBtn.addEventListener('click', this.handleExportBackup);
+        if (importBackupBtn) importBackupBtn.addEventListener('click', this.handleImportBackup);
+        if (showBackupsBtn) showBackupsBtn.addEventListener('click', this.handleShowBackups);
     }
 
     /**
@@ -529,6 +580,260 @@ class BrunosCalculator {
 
         this.calculateTotal();
         this.debouncedSave();
+    }
+
+    /**
+     * Nastavenie ochrany pred zatvorením stránky
+     */
+    setupBeforeUnloadProtection() {
+        window.addEventListener('beforeunload', (event) => {
+            if (this.hasUnsavedChanges) {
+                event.preventDefault();
+                event.returnValue = 'Máte neuložené zmeny. Naozaj chcete zatvoriť stránku?';
+                return event.returnValue;
+            }
+        });
+        console.log('🛡️ Ochrana pred stratou dát aktivovaná');
+    }
+
+    /**
+     * Spustenie systému automatického zálohovania
+     */
+    startAutoBackupSystem() {
+        this.autoBackupInterval = startAutoBackup(() => this.getAllData());
+        console.log('🔄 Automatické zálohovanie spustené');
+    }
+
+    /**
+     * Zastavenie automatického zálohovania
+     */
+    stopAutoBackupSystem() {
+        if (this.autoBackupInterval) {
+            stopAutoBackup(this.autoBackupInterval);
+            this.autoBackupInterval = null;
+        }
+    }
+
+    /**
+     * Vytvorenie prvotnej zálohy pri štarte
+     */
+    async createInitialBackup() {
+        try {
+            const data = this.getAllData();
+            await saveBackup(data, 'backup_initial_' + Date.now());
+            console.log('✅ Prvotná záloha vytvorená');
+        } catch (error) {
+            console.warn('⚠️ Nepodarilo sa vytvoriť prvotný backup:', error);
+        }
+    }
+
+    /**
+     * Získa všetky dáta aplikácie
+     */
+    getAllData() {
+        return {
+            monthData: this.monthData,
+            hourlyWage: this.hourlyWage,
+            taxRate: this.taxRate,
+            isDarkMode: this.isDarkMode,
+            decimalPlaces: this.decimalPlaces,
+            employeeName: this.employeeName
+        };
+    }
+
+    /**
+     * Handler pre manuálnu zálohu
+     */
+    async handleManualBackup() {
+        try {
+            const data = this.getAllData();
+            const result = await saveBackup(data, `backup_manual_${Date.now()}`);
+
+            if (result.success) {
+                alert('✅ Manuálna záloha úspešne vytvorená!');
+                this.hasUnsavedChanges = false;
+            } else {
+                alert('⚠️ Záloha sa nepodarila vytvoriť v žiadnom úložisku.');
+            }
+        } catch (error) {
+            console.error('Chyba pri vytváraní manuálnej zálohy:', error);
+            alert('❌ Chyba pri vytváraní zálohy.');
+        }
+    }
+
+    /**
+     * Handler pre export zálohy do súboru
+     */
+    handleExportBackup() {
+        try {
+            const data = this.getAllData();
+            const success = exportBackupToFile(data);
+
+            if (success) {
+                alert('✅ Záloha exportovaná do súboru!');
+            } else {
+                alert('❌ Chyba pri exporte zálohy.');
+            }
+        } catch (error) {
+            console.error('Chyba pri exporte zálohy:', error);
+            alert('❌ Chyba pri exporte zálohy.');
+        }
+    }
+
+    /**
+     * Handler pre import zálohy zo súboru
+     */
+    handleImportBackup() {
+        if (!confirm('Import zálohy prepíše všetky aktuálne dáta. Pokračovať?')) {
+            return;
+        }
+
+        importBackupFromFile((result) => {
+            if (result.success) {
+                // Obnovenie dát
+                const data = result.backup.data;
+
+                this.monthData = data.monthData || {};
+                this.hourlyWage = data.hourlyWage || DEFAULT_HOURLY_WAGE;
+                this.taxRate = data.taxRate || (DEFAULT_TAX_RATE / 100);
+                this.decimalPlaces = data.decimalPlaces || DEFAULT_DECIMAL_PLACES;
+                this.employeeName = data.employeeName || '';
+                this.isDarkMode = data.isDarkMode || false;
+
+                // Aktualizácia UI
+                document.getElementById('hourlyWageInput').value = this.hourlyWage;
+                document.getElementById('taxRateInput').value = (this.taxRate * 100).toFixed(1);
+                document.getElementById('decimalPlacesSelect').value = this.decimalPlaces;
+                document.getElementById('employeeNameInput').value = this.employeeName;
+
+                // Uloženie a obnovenie
+                this.saveData();
+                this.createTable();
+                this.calculateTotal();
+                applyDarkMode(this.isDarkMode);
+
+                alert('✅ Záloha úspešne importovaná!\n\nDátum zálohy: ' + new Date(result.backup.timestamp).toLocaleString());
+            } else {
+                alert('❌ Chyba pri importe zálohy: ' + result.error);
+            }
+        });
+    }
+
+    /**
+     * Handler pre zobrazenie zoznamu záloh
+     */
+    async handleShowBackups() {
+        try {
+            const backups = await listBackups();
+            const stats = await getBackupStats();
+
+            if (backups.length === 0) {
+                alert('Nenašli sa žiadne zálohy.');
+                return;
+            }
+
+            let message = `📊 ŠTATISTIKY ZÁLOH\n\n`;
+            message += `Celkový počet záloh: ${stats.totalBackups}\n`;
+            message += `Automatické: ${stats.autoBackups}\n`;
+            message += `Manuálne: ${stats.manualBackups}\n`;
+            message += `Celková veľkosť: ${(stats.totalSize / 1024).toFixed(2)} KB\n`;
+            message += `\nÚložiská:\n`;
+            message += `  - localStorage: ${stats.sources.localStorage}\n`;
+            message += `  - IndexedDB: ${stats.sources.indexedDB}\n`;
+            message += `\n━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+            message += `📋 POSLEDNÝCH 10 ZÁLOH:\n\n`;
+
+            backups.slice(0, 10).forEach((backup, index) => {
+                const date = new Date(backup.timestamp);
+                const type = backup.name.includes('auto') ? '🔄 Auto' :
+                            backup.name.includes('manual') ? '📝 Manuál' :
+                            backup.name.includes('initial') ? '🎬 Init' : '💾 Iné';
+
+                message += `${index + 1}. ${type}\n`;
+                message += `   ${date.toLocaleString('sk-SK')}\n`;
+                message += `   ${(backup.size / 1024).toFixed(2)} KB (${backup.source})\n\n`;
+            });
+
+            // Zobrazenie v scrollable alert (použijeme confirm pre lepšiu čitateľnosť)
+            const wantsRestore = confirm(message + '\n\nChcete obnoviť zálohu?');
+
+            if (wantsRestore) {
+                await this.showRestoreDialog(backups);
+            }
+        } catch (error) {
+            console.error('Chyba pri zobrazovaní záloh:', error);
+            alert('❌ Chyba pri načítavaní záloh.');
+        }
+    }
+
+    /**
+     * Zobrazí dialóg pre obnovenie zálohy
+     */
+    async showRestoreDialog(backups) {
+        let message = 'Vyberte číslo zálohy na obnovenie:\n\n';
+
+        backups.slice(0, 10).forEach((backup, index) => {
+            const date = new Date(backup.timestamp);
+            message += `${index + 1}. ${date.toLocaleString('sk-SK')}\n`;
+        });
+
+        const choice = prompt(message + '\nZadajte číslo (1-' + Math.min(10, backups.length) + ') alebo zrušte:');
+
+        if (choice && !isNaN(choice)) {
+            const index = parseInt(choice) - 1;
+
+            if (index >= 0 && index < backups.length) {
+                const backupToRestore = backups[index];
+
+                if (confirm(`Obnoviť zálohu z ${new Date(backupToRestore.timestamp).toLocaleString('sk-SK')}?\n\nAktuálne dáta budú prepísané!`)) {
+                    const result = await restoreFromBackup(backupToRestore.name);
+
+                    if (result.success) {
+                        alert('✅ Záloha úspešne obnovená!\n\nStránka sa znovu načíta.');
+                        window.location.reload();
+                    } else {
+                        alert('❌ Chyba pri obnovovaní zálohy: ' + result.message);
+                    }
+                }
+            } else {
+                alert('❌ Neplatné číslo zálohy.');
+            }
+        }
+    }
+
+    /**
+     * Override saveData aby označovala unsaved changes
+     */
+    saveData() {
+        const daysInMonth = getDaysInMonth(this.currentYear, this.currentMonth);
+        const data = [];
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            const inputData = getDayInputData(this.currentYear, this.currentMonth, i);
+            data.push(inputData);
+        }
+
+        if (!this.monthData[this.currentYear]) {
+            this.monthData[this.currentYear] = {};
+        }
+        this.monthData[this.currentYear][this.currentMonth] = data;
+
+        const success = saveAllData({
+            monthData: this.monthData,
+            hourlyWage: this.hourlyWage,
+            taxRate: this.taxRate,
+            isDarkMode: this.isDarkMode,
+            decimalPlaces: this.decimalPlaces,
+            employeeName: this.employeeName
+        });
+
+        if (success) {
+            updateDataSizeDisplay();
+            showSaveNotification();
+            this.hasUnsavedChanges = false;
+        } else {
+            this.hasUnsavedChanges = true;
+        }
     }
 }
 
