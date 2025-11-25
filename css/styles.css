@@ -806,6 +806,10 @@ body.dark-mode .time-clock-icon:hover {
         gap: 2px; /* Menší odstup na mobile */
     }
 
+    .time-input-wrapper input {
+        min-width: 45px; /* Minimálna šírka pre zobrazenie MM */
+    }
+
     .time-clock-icon {
         font-size: 12px; /* Menšia ikona */
         padding: 1px 2px; /* Menší padding */
