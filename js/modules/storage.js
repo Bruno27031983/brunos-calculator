@@ -3,6 +3,7 @@
  */
 
 import { MAX_DATA_SIZE, MAX_DATA_SIZE_KB, STORAGE_KEYS } from './constants.js';
+import { showError } from './toast.js';
 
 /**
  * Načíta hodnotu z localStorage a parsuje ju
@@ -165,7 +166,7 @@ export function saveAllData(data) {
     const bytes = new Blob([totalData]).size;
 
     if (bytes > MAX_DATA_SIZE) {
-        alert(`Prekročili ste maximálnu veľkosť dát (${MAX_DATA_SIZE_KB.toFixed(2)} KB). Dáta neboli uložené.`);
+        showError(`Prekročili ste maximálnu veľkosť dát (${MAX_DATA_SIZE_KB.toFixed(2)} KB). Dáta neboli uložené.`);
         return false;
     }
 

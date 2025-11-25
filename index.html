@@ -5,10 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bruno's Calculator</title>
 
-    <!-- External Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.15/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <!-- External Libraries with SRI -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+            integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNougY4QE0TGdJrZv+oVOl/fJNRt/9e4CXBMWubLdYQkpU4mUw2gltb6Q=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.15/jspdf.plugin.autotable.min.js"
+            integrity="sha512-7bq4nUicJo3FPZj0vTRKdYl1+HLJKlvW7kzZXiJXcMBBG1nCMjGXBfMzjR9BvKpvPwXnzuWlPeP3HuiPLKqRDg=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"
+            integrity="sha512-lkHQOC1Fv2ljWfNJCTxnBZ8ng9bgPCnbdvG7fD2GxZqVlJ3WW6EQhp7bSHGx3b+xKkLQ/xLbj7UXS/5Y4RxkbQ=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/styles.css">
@@ -22,19 +31,29 @@
         <div class="settings">
             <div>
                 <label for="employeeNameInput">Meno pracovníka: </label>
-                <input type="text" id="employeeNameInput" placeholder="Zadajte meno pracovníka">
+                <input type="text" id="employeeNameInput"
+                       placeholder="Zadajte meno pracovníka"
+                       aria-label="Meno pracovníka"
+                       aria-describedby="employeeNameHelp">
             </div>
             <div>
                 <label for="hourlyWageInput">Hodinová mzda (€): </label>
-                <input type="number" id="hourlyWageInput" value="10" min="0" step="0.1">
+                <input type="number" id="hourlyWageInput"
+                       value="10" min="0" step="0.1"
+                       aria-label="Hodinová mzda v eurách"
+                       aria-describedby="hourlyWageHelp">
             </div>
             <div>
                 <label for="taxRateInput">Daňové percento (%): </label>
-                <input type="number" id="taxRateInput" value="2" min="0" step="0.1">
+                <input type="number" id="taxRateInput"
+                       value="2" min="0" step="0.1"
+                       aria-label="Daňové percento"
+                       aria-describedby="taxRateHelp">
             </div>
             <div>
                 <label for="monthSelect">Mesiac: </label>
-                <select id="monthSelect">
+                <select id="monthSelect"
+                        aria-label="Výber mesiaca">
                     <option value="0">Január</option>
                     <option value="1">Február</option>
                     <option value="2">Marec</option>
@@ -51,68 +70,73 @@
             </div>
             <div>
                 <label for="yearSelect">Rok: </label>
-                <select id="yearSelect">
+                <select id="yearSelect"
+                        aria-label="Výber roka">
                     <!-- Dynamically generated -->
                 </select>
             </div>
             <div>
                 <label for="decimalPlacesSelect">Počet desatinných miest: </label>
-                <select id="decimalPlacesSelect">
+                <select id="decimalPlacesSelect"
+                        aria-label="Počet desatinných miest">
                     <option value="1">1</option>
                     <option value="2">2</option>
                 </select>
             </div>
-            <button class="btn highlight">Prepínať tmavý režim</button>
+            <button class="btn highlight"
+                    aria-label="Prepínať medzi svetlým a tmavým režimom">
+                Prepínať tmavý režim
+            </button>
         </div>
 
         <div class="table-container">
-            <table>
+            <table role="table" aria-label="Tabuľka pracovného času">
                 <thead>
-                    <tr>
-                        <th>Deň</th>
-                        <th>Príchod</th>
-                        <th>Odchod</th>
-                        <th>Prestávka</th>
-                        <th>Odpracované</th>
-                        <th>Hrubá Mzda (€)</th>
-                        <th>Čistá Mzda (€)</th>
-                        <th>Akcia</th>
+                    <tr role="row">
+                        <th scope="col" role="columnheader">Deň</th>
+                        <th scope="col" role="columnheader">Príchod</th>
+                        <th scope="col" role="columnheader">Odchod</th>
+                        <th scope="col" role="columnheader">Prestávka</th>
+                        <th scope="col" role="columnheader">Odpracované</th>
+                        <th scope="col" role="columnheader">Hrubá Mzda (€)</th>
+                        <th scope="col" role="columnheader">Čistá Mzda (€)</th>
+                        <th scope="col" role="columnheader">Akcia</th>
                     </tr>
                 </thead>
-                <tbody id="workDays">
+                <tbody id="workDays" role="rowgroup">
                     <!-- Dynamically generated -->
                 </tbody>
             </table>
         </div>
 
-        <div id="totalSalary"></div>
+        <div id="totalSalary" role="status" aria-live="polite" aria-label="Celkové štatistiky"></div>
 
-        <div id="dataSizeContainer">
-            <div id="dataSizeText">Veľkosť dát: 0 KB / 4096 KB</div>
-            <div id="dataSizeBar">
+        <div id="dataSizeContainer" role="status" aria-live="polite" aria-label="Využitie úložiska">
+            <div id="dataSizeText" aria-live="polite">Veľkosť dát: 0 KB / 4096 KB</div>
+            <div id="dataSizeBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Percentuálne využitie úložiska">
                 <div id="dataSizeFill"></div>
             </div>
         </div>
 
-        <div class="btn-container">
-            <button class="btn reset-btn">Resetovať všetko</button>
-            <button class="btn export-btn">Exportovať do PDF</button>
-            <button class="btn export-btn">Exportovať do Excelu</button>
-            <button class="btn export-btn">Odoslať PDF</button>
-            <button class="btn export-btn">Importovať z Excelu</button>
+        <div class="btn-container" role="toolbar" aria-label="Akcie">
+            <button class="btn reset-btn" aria-label="Resetovať všetky dáta pre aktuálny mesiac">Resetovať všetko</button>
+            <button class="btn export-btn" aria-label="Exportovať výkaz práce do PDF súboru">Exportovať do PDF</button>
+            <button class="btn export-btn" aria-label="Exportovať výkaz práce do Excel súboru">Exportovať do Excelu</button>
+            <button class="btn export-btn" aria-label="Odoslať PDF výkaz práce pomocou zdieľania">Odoslať PDF</button>
+            <button class="btn export-btn" aria-label="Importovať dáta z Excel súboru">Importovať z Excelu</button>
         </div>
 
         <h3 style="text-align: center; margin-top: 30px; color: #555;">🛡️ Ochrana a zálohovanie dát</h3>
-        <div class="btn-container backup-container">
-            <button class="btn backup-btn" id="manualBackupBtn">💾 Vytvoriť zálohu</button>
-            <button class="btn backup-btn" id="exportBackupBtn">📥 Exportovať zálohu</button>
-            <button class="btn backup-btn" id="importBackupBtn">📤 Importovať zálohu</button>
-            <button class="btn backup-btn" id="showBackupsBtn">📋 Zobraziť zálohy</button>
-            <button class="btn backup-btn" id="storageInfoBtn">💽 Info o úložisku</button>
+        <div class="btn-container backup-container" role="toolbar" aria-label="Zálohovanie a ochrana dát">
+            <button class="btn backup-btn" id="manualBackupBtn" aria-label="Vytvoriť manuálnu zálohu všetkých dát">💾 Vytvoriť zálohu</button>
+            <button class="btn backup-btn" id="exportBackupBtn" aria-label="Exportovať zálohu do JSON súboru">📥 Exportovať zálohu</button>
+            <button class="btn backup-btn" id="importBackupBtn" aria-label="Importovať zálohu z JSON súboru">📤 Importovať zálohu</button>
+            <button class="btn backup-btn" id="showBackupsBtn" aria-label="Zobraziť zoznam všetkých dostupných záloh">📋 Zobraziť zálohy</button>
+            <button class="btn backup-btn" id="storageInfoBtn" aria-label="Zobraziť informácie o využitom úložisku">💽 Info o úložisku</button>
         </div>
     </div>
 
-    <div id="saveNotification">Dáta boli úspešne uložené</div>
+    <div id="saveNotification" role="status" aria-live="polite">Dáta boli úspešne uložené</div>
 
     <!-- Application Script -->
     <script type="module" src="js/app.js"></script>

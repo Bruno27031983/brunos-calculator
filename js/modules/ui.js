@@ -10,6 +10,7 @@ import {
     MAX_DATA_SIZE_KB
 } from './constants.js';
 import { calculateDataSize } from './storage.js';
+import { showError } from './toast.js';
 
 /**
  * Zobrazí notifikáciu o uložení
@@ -54,7 +55,7 @@ export function updateDataSizeDisplay() {
     }
 
     if (isOverLimit) {
-        alert(`Aktuálna veľkosť dát (${kilobytes} KB) prekročila maximálnu povolenú veľkosť (${MAX_DATA_SIZE_KB} KB). Pokúste sa znížiť množstvo uložených dát.`);
+        showError(`Aktuálna veľkosť dát (${kilobytes} KB) prekročila maximálnu povolenú veľkosť (${MAX_DATA_SIZE_KB} KB). Pokúste sa znížiť množstvo uložených dát.`);
         console.warn('Dáta prekročili limit veľkosti.');
     } else {
         console.log(`Aktuálna veľkosť dát: ${kilobytes} KB (${percentageUsed}%)`);
@@ -179,6 +180,7 @@ export function getDayElement(year, month, day, type) {
  */
 export function createDayRow(year, month, day, dayName, isCurrentDay, decimalPlaces, handlers) {
     const row = document.createElement('tr');
+    row.setAttribute('role', 'row');
 
     if (isCurrentDay) {
         row.classList.add(CSS_CLASSES.CURRENT_DAY);
@@ -191,41 +193,118 @@ export function createDayRow(year, month, day, dayName, isCurrentDay, decimalPla
     const grossId = createDayElementId(year, month, day, 'gross');
     const netId = createDayElementId(year, month, day, 'net');
 
-    row.innerHTML = `
-        <td>Deň ${day} (${dayName})</td>
-        <td><input type="tel" id="${startId}" maxlength="5" pattern="[0-9:]*" inputmode="numeric" placeholder="HH:MM"></td>
-        <td><input type="tel" id="${endId}" maxlength="5" pattern="[0-9:]*" inputmode="numeric" placeholder="HH:MM"></td>
-        <td><input type="number" id="${breakId}" min="0" step="0.5" placeholder="prestávka"></td>
-        <td id="${totalId}">0h 0m (${(0).toFixed(decimalPlaces)} h)</td>
-        <td><input type="number" id="${grossId}" min="0" step="0.01" placeholder="Hrubá Mzda" readonly></td>
-        <td><input type="number" id="${netId}" min="0" step="0.01" placeholder="Čistá Mzda" readonly></td>
-        <td><button class="btn reset-btn" data-day="${day}">Vynulovať</button></td>
-    `;
+    // Bezpečne vytvoríme elementy pomocou DOM API namiesto innerHTML (XSS ochrana)
 
-    // Pridanie event listenerov
+    // Stĺpec dňa
+    const dayCell = document.createElement('td');
+    dayCell.setAttribute('role', 'cell');
+    dayCell.textContent = `Deň ${day} (${dayName})`;
+    row.appendChild(dayCell);
+
+    // Príchod
+    const startCell = document.createElement('td');
+    startCell.setAttribute('role', 'cell');
+    const startInput = document.createElement('input');
+    startInput.type = 'tel';
+    startInput.id = startId;
+    startInput.maxLength = 5;
+    startInput.pattern = '[0-9:]*';
+    startInput.inputMode = 'numeric';
+    startInput.placeholder = 'HH:MM';
+    startInput.setAttribute('aria-label', `Čas príchodu pre deň ${day} ${dayName}`);
+    startCell.appendChild(startInput);
+    row.appendChild(startCell);
+
+    // Odchod
+    const endCell = document.createElement('td');
+    endCell.setAttribute('role', 'cell');
+    const endInput = document.createElement('input');
+    endInput.type = 'tel';
+    endInput.id = endId;
+    endInput.maxLength = 5;
+    endInput.pattern = '[0-9:]*';
+    endInput.inputMode = 'numeric';
+    endInput.placeholder = 'HH:MM';
+    endInput.setAttribute('aria-label', `Čas odchodu pre deň ${day} ${dayName}`);
+    endCell.appendChild(endInput);
+    row.appendChild(endCell);
+
+    // Prestávka
+    const breakCell = document.createElement('td');
+    breakCell.setAttribute('role', 'cell');
+    const breakInput = document.createElement('input');
+    breakInput.type = 'number';
+    breakInput.id = breakId;
+    breakInput.min = '0';
+    breakInput.step = '0.5';
+    breakInput.placeholder = 'prestávka';
+    breakInput.setAttribute('aria-label', `Prestávka v hodinách pre deň ${day} ${dayName}`);
+    breakCell.appendChild(breakInput);
+    row.appendChild(breakCell);
+
+    // Odpracované
+    const totalCell = document.createElement('td');
+    totalCell.setAttribute('role', 'cell');
+    totalCell.id = totalId;
+    totalCell.textContent = `0h 0m (${(0).toFixed(decimalPlaces)} h)`;
+    totalCell.setAttribute('aria-label', `Odpracované hodiny pre deň ${day}`);
+    row.appendChild(totalCell);
+
+    // Hrubá mzda
+    const grossCell = document.createElement('td');
+    grossCell.setAttribute('role', 'cell');
+    const grossInput = document.createElement('input');
+    grossInput.type = 'number';
+    grossInput.id = grossId;
+    grossInput.min = '0';
+    grossInput.step = '0.01';
+    grossInput.placeholder = 'Hrubá Mzda';
+    grossInput.readOnly = true;
+    grossInput.setAttribute('aria-label', `Hrubá mzda pre deň ${day}`);
+    grossInput.setAttribute('aria-readonly', 'true');
+    grossCell.appendChild(grossInput);
+    row.appendChild(grossCell);
+
+    // Čistá mzda
+    const netCell = document.createElement('td');
+    netCell.setAttribute('role', 'cell');
+    const netInput = document.createElement('input');
+    netInput.type = 'number';
+    netInput.id = netId;
+    netInput.min = '0';
+    netInput.step = '0.01';
+    netInput.placeholder = 'Čistá Mzda';
+    netInput.readOnly = true;
+    netInput.setAttribute('aria-label', `Čistá mzda pre deň ${day}`);
+    netInput.setAttribute('aria-readonly', 'true');
+    netCell.appendChild(netInput);
+    row.appendChild(netCell);
+
+    // Akcia
+    const actionCell = document.createElement('td');
+    actionCell.setAttribute('role', 'cell');
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'btn reset-btn';
+    resetBtn.dataset.day = day;
+    resetBtn.textContent = 'Vynulovať';
+    resetBtn.setAttribute('aria-label', `Vynulovať dáta pre deň ${day} ${dayName}`);
+    actionCell.appendChild(resetBtn);
+    row.appendChild(actionCell);
+
+    // Pridanie event listenerov (používame priame referencie namiesto dotazovania DOM)
     if (handlers) {
-        setTimeout(() => {
-            const startInput = document.getElementById(startId);
-            const endInput = document.getElementById(endId);
-            const breakInput = document.getElementById(breakId);
-            const resetBtn = row.querySelector('.btn.reset-btn');
+        if (handlers.onTimeInput) {
+            startInput.addEventListener('input', () => handlers.onTimeInput(day, 'start'));
+            endInput.addEventListener('input', () => handlers.onTimeInput(day, 'end'));
+        }
 
-            if (startInput && handlers.onTimeInput) {
-                startInput.addEventListener('input', () => handlers.onTimeInput(day, 'start'));
-            }
+        if (handlers.onBreakInput) {
+            breakInput.addEventListener('input', () => handlers.onBreakInput(day));
+        }
 
-            if (endInput && handlers.onTimeInput) {
-                endInput.addEventListener('input', () => handlers.onTimeInput(day, 'end'));
-            }
-
-            if (breakInput && handlers.onBreakInput) {
-                breakInput.addEventListener('input', () => handlers.onBreakInput(day));
-            }
-
-            if (resetBtn && handlers.onResetRow) {
-                resetBtn.addEventListener('click', () => handlers.onResetRow(day));
-            }
-        }, 0);
+        if (handlers.onResetRow) {
+            resetBtn.addEventListener('click', () => handlers.onResetRow(day));
+        }
     }
 
     return row;

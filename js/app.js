@@ -74,6 +74,23 @@ import {
     checkStorageHealth
 } from './modules/persistence.js';
 
+import {
+    showSuccess,
+    showError,
+    showWarning,
+    showInfo,
+    showConfirm,
+    showPrompt
+} from './modules/toast.js';
+
+import {
+    sanitizeEmployeeName,
+    validateHourlyWage,
+    validateTaxRate,
+    validateBreakTime,
+    validateWorkingHours
+} from './modules/validation.js';
+
 /**
  * Hlavná trieda aplikácie
  */
@@ -146,7 +163,7 @@ class BrunosCalculator {
 
             // Kontrola zdravia úložiska
             if (persistenceResult.health.warning || persistenceResult.health.critical) {
-                alert(persistenceResult.health.message + '\n\nOdporúčame exportovať zálohy do súborov!');
+                showWarning(persistenceResult.health.message + '\n\nOdporúčame exportovať zálohy do súborov!', 5000);
             }
         } catch (error) {
             console.warn('⚠️ Chyba pri inicializácii persistence:', error);
@@ -381,38 +398,6 @@ class BrunosCalculator {
     }
 
     /**
-     * Uloží dáta do localStorage
-     */
-    saveData() {
-        const daysInMonth = getDaysInMonth(this.currentYear, this.currentMonth);
-        const data = [];
-
-        for (let i = 1; i <= daysInMonth; i++) {
-            const inputData = getDayInputData(this.currentYear, this.currentMonth, i);
-            data.push(inputData);
-        }
-
-        if (!this.monthData[this.currentYear]) {
-            this.monthData[this.currentYear] = {};
-        }
-        this.monthData[this.currentYear][this.currentMonth] = data;
-
-        const success = saveAllData({
-            monthData: this.monthData,
-            hourlyWage: this.hourlyWage,
-            taxRate: this.taxRate,
-            isDarkMode: this.isDarkMode,
-            decimalPlaces: this.decimalPlaces,
-            employeeName: this.employeeName
-        });
-
-        if (success) {
-            updateDataSizeDisplay();
-            showSaveNotification();
-        }
-    }
-
-    /**
      * Handler pre zmenu času
      */
     handleTimeInput(day, type) {
@@ -434,7 +419,7 @@ class BrunosCalculator {
             const nextId = createDayElementId(this.currentYear, this.currentMonth, day, nextType);
             focusNextElement(nextId);
         } else if (formatted.length === 5) {
-            alert("Neplatný čas. Prosím, zadajte čas vo formáte HH:MM (napr. 06:30 pre 6:30).");
+            showError("Neplatný čas. Prosím, zadajte čas vo formáte HH:MM (napr. 06:30 pre 6:30).");
             input.value = '';
         }
 
@@ -472,8 +457,18 @@ class BrunosCalculator {
     /**
      * Handler pre reset všetkých dát
      */
-    handleResetAll() {
-        if (confirm('Ste si istý, že chcete resetovať dáta pre aktuálny mesiac? Táto akcia sa nedá vrátiť späť.')) {
+    async handleResetAll() {
+        const confirmed = await showConfirm(
+            'Ste si istý, že chcete resetovať dáta pre aktuálny mesiac? Táto akcia sa nedá vrátiť späť.',
+            {
+                title: 'Resetovať všetky dáta',
+                confirmText: 'Resetovať',
+                cancelText: 'Zrušiť',
+                type: 'warning'
+            }
+        );
+
+        if (confirmed) {
             if (this.monthData[this.currentYear] && this.monthData[this.currentYear][this.currentMonth]) {
                 delete this.monthData[this.currentYear][this.currentMonth];
             }
@@ -481,6 +476,7 @@ class BrunosCalculator {
             this.createTable();
             this.calculateTotal();
             this.saveData();
+            showSuccess('Dáta pre aktuálny mesiac boli resetované.');
         }
     }
 
@@ -540,12 +536,12 @@ class BrunosCalculator {
                 this.calculateTotal();
                 this.saveData();
 
-                alert('Dáta boli úspešne importované z Excelu.');
+                showSuccess('Dáta boli úspešne importované z Excelu.');
             },
             (error) => {
                 // Chyba pri importe
                 console.error('Chyba pri importe:', error);
-                alert(`Chyba pri importe dát z Excelu: ${error.message}`);
+                showError(`Chyba pri importe dát z Excelu: ${error.message}`);
             }
         );
     }
@@ -590,7 +586,15 @@ class BrunosCalculator {
      * Handler pre zmenu mena pracovníka
      */
     handleEmployeeNameChange() {
-        this.employeeName = document.getElementById('employeeNameInput').value.trim();
+        const rawName = document.getElementById('employeeNameInput').value;
+        this.employeeName = sanitizeEmployeeName(rawName);
+
+        // Ak bolo meno sanitizované, aktualizujeme input
+        if (rawName !== this.employeeName) {
+            document.getElementById('employeeNameInput').value = this.employeeName;
+            showInfo('Niektoré znaky boli odstránené z mena pre bezpečnosť.');
+        }
+
         console.log(`Zmena mena pracovníka: ${this.employeeName}`);
         this.debouncedSave();
     }
@@ -599,8 +603,25 @@ class BrunosCalculator {
      * Handler pre zmenu nastavení (mzda, dane)
      */
     handleSettingsChange() {
-        this.hourlyWage = parseFloat(document.getElementById('hourlyWageInput').value);
-        this.taxRate = parseFloat(document.getElementById('taxRateInput').value) / 100;
+        const wageValue = document.getElementById('hourlyWageInput').value;
+        const taxValue = document.getElementById('taxRateInput').value;
+
+        // Validácia hodinovej mzdy
+        const wageValidation = validateHourlyWage(wageValue);
+        if (!wageValidation.valid) {
+            showError(wageValidation.error);
+            return;
+        }
+
+        // Validácia daňovej sadzby
+        const taxValidation = validateTaxRate(taxValue);
+        if (!taxValidation.valid) {
+            showError(taxValidation.error);
+            return;
+        }
+
+        this.hourlyWage = wageValidation.value;
+        this.taxRate = taxValidation.value / 100;
         console.log(`Zmena nastavení: mzda=${this.hourlyWage}, dane=${this.taxRate * 100}%`);
 
         const daysInMonth = getDaysInMonth(this.currentYear, this.currentMonth);
@@ -680,14 +701,14 @@ class BrunosCalculator {
             const result = await saveBackup(data, `backup_manual_${Date.now()}`);
 
             if (result.success) {
-                alert('✅ Manuálna záloha úspešne vytvorená!');
+                showSuccess('Manuálna záloha úspešne vytvorená!');
                 this.hasUnsavedChanges = false;
             } else {
-                alert('⚠️ Záloha sa nepodarila vytvoriť v žiadnom úložisku.');
+                showWarning('Záloha sa nepodarila vytvoriť v žiadnom úložisku.');
             }
         } catch (error) {
             console.error('Chyba pri vytváraní manuálnej zálohy:', error);
-            alert('❌ Chyba pri vytváraní zálohy.');
+            showError('Chyba pri vytváraní zálohy.');
         }
     }
 
@@ -700,21 +721,31 @@ class BrunosCalculator {
             const success = exportBackupToFile(data);
 
             if (success) {
-                alert('✅ Záloha exportovaná do súboru!');
+                showSuccess('Záloha exportovaná do súboru!');
             } else {
-                alert('❌ Chyba pri exporte zálohy.');
+                showError('Chyba pri exporte zálohy.');
             }
         } catch (error) {
             console.error('Chyba pri exporte zálohy:', error);
-            alert('❌ Chyba pri exporte zálohy.');
+            showError('Chyba pri exporte zálohy.');
         }
     }
 
     /**
      * Handler pre import zálohy zo súboru
      */
-    handleImportBackup() {
-        if (!confirm('Import zálohy prepíše všetky aktuálne dáta. Pokračovať?')) {
+    async handleImportBackup() {
+        const confirmed = await showConfirm(
+            'Import zálohy prepíše všetky aktuálne dáta. Pokračovať?',
+            {
+                title: 'Import zálohy',
+                confirmText: 'Importovať',
+                cancelText: 'Zrušiť',
+                type: 'warning'
+            }
+        );
+
+        if (!confirmed) {
             return;
         }
 
@@ -742,9 +773,9 @@ class BrunosCalculator {
                 this.calculateTotal();
                 applyDarkMode(this.isDarkMode);
 
-                alert('✅ Záloha úspešne importovaná!\n\nDátum zálohy: ' + new Date(result.backup.timestamp).toLocaleString());
+                showSuccess('Záloha úspešne importovaná!\n\nDátum zálohy: ' + new Date(result.backup.timestamp).toLocaleString(), 4000);
             } else {
-                alert('❌ Chyba pri importe zálohy: ' + result.error);
+                showError('Chyba pri importe zálohy: ' + result.error);
             }
         });
     }
@@ -758,7 +789,7 @@ class BrunosCalculator {
             const stats = await getBackupStats();
 
             if (backups.length === 0) {
-                alert('Nenašli sa žiadne zálohy.');
+                showInfo('Nenašli sa žiadne zálohy.');
                 return;
             }
 
@@ -784,15 +815,22 @@ class BrunosCalculator {
                 message += `   ${(backup.size / 1024).toFixed(2)} KB (${backup.source})\n\n`;
             });
 
-            // Zobrazenie v scrollable alert (použijeme confirm pre lepšiu čitateľnosť)
-            const wantsRestore = confirm(message + '\n\nChcete obnoviť zálohu?');
+            const wantsRestore = await showConfirm(
+                message + '\n\nChcete obnoviť zálohu?',
+                {
+                    title: 'Zálohy',
+                    confirmText: 'Obnoviť zálohu',
+                    cancelText: 'Zavrieť',
+                    type: 'info'
+                }
+            );
 
             if (wantsRestore) {
                 await this.showRestoreDialog(backups);
             }
         } catch (error) {
             console.error('Chyba pri zobrazovaní záloh:', error);
-            alert('❌ Chyba pri načítavaní záloh.');
+            showError('Chyba pri načítavaní záloh.');
         }
     }
 
@@ -807,7 +845,15 @@ class BrunosCalculator {
             message += `${index + 1}. ${date.toLocaleString('sk-SK')}\n`;
         });
 
-        const choice = prompt(message + '\nZadajte číslo (1-' + Math.min(10, backups.length) + ') alebo zrušte:');
+        const choice = await showPrompt(
+            message,
+            {
+                title: 'Obnovenie zálohy',
+                confirmText: 'Obnoviť',
+                cancelText: 'Zrušiť',
+                placeholder: '1-' + Math.min(10, backups.length)
+            }
+        );
 
         if (choice && !isNaN(choice)) {
             const index = parseInt(choice) - 1;
@@ -815,18 +861,30 @@ class BrunosCalculator {
             if (index >= 0 && index < backups.length) {
                 const backupToRestore = backups[index];
 
-                if (confirm(`Obnoviť zálohu z ${new Date(backupToRestore.timestamp).toLocaleString('sk-SK')}?\n\nAktuálne dáta budú prepísané!`)) {
+                const confirmed = await showConfirm(
+                    `Obnoviť zálohu z ${new Date(backupToRestore.timestamp).toLocaleString('sk-SK')}?\n\nAktuálne dáta budú prepísané!`,
+                    {
+                        title: 'Potvrdenie obnovy',
+                        confirmText: 'Obnoviť',
+                        cancelText: 'Zrušiť',
+                        type: 'warning'
+                    }
+                );
+
+                if (confirmed) {
                     const result = await restoreFromBackup(backupToRestore.name);
 
                     if (result.success) {
-                        alert('✅ Záloha úspešne obnovená!\n\nStránka sa znovu načíta.');
-                        window.location.reload();
+                        showSuccess('Záloha úspešne obnovená!\n\nStránka sa znovu načíta.', 3000);
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3000);
                     } else {
-                        alert('❌ Chyba pri obnovovaní zálohy: ' + result.message);
+                        showError('Chyba pri obnovovaní zálohy: ' + result.message);
                     }
                 }
             } else {
-                alert('❌ Neplatné číslo zálohy.');
+                showError('Neplatné číslo zálohy.');
             }
         }
     }
@@ -837,15 +895,20 @@ class BrunosCalculator {
     async handleShowStorageInfo() {
         try {
             const message = await showStorageInfo();
-            alert(message);
+            await showConfirm(message, {
+                title: 'Informácie o úložisku',
+                confirmText: 'OK',
+                cancelText: '',
+                type: 'info'
+            });
         } catch (error) {
             console.error('Chyba pri zobrazovaní storage info:', error);
-            alert('❌ Chyba pri získavaní informácií o úložisku.');
+            showError('Chyba pri získavaní informácií o úložisku.');
         }
     }
 
     /**
-     * Override saveData aby označovala unsaved changes
+     * Uloží dáta do localStorage
      */
     saveData() {
         const daysInMonth = getDaysInMonth(this.currentYear, this.currentMonth);
