@@ -67,6 +67,13 @@ import {
 
 import { initDB } from './modules/indexeddb.js';
 
+import {
+    initPersistence,
+    showStorageInfo,
+    getStorageStatus,
+    checkStorageHealth
+} from './modules/persistence.js';
+
 /**
  * Hlavná trieda aplikácie
  */
@@ -108,6 +115,7 @@ class BrunosCalculator {
         this.handleExportBackup = this.handleExportBackup.bind(this);
         this.handleImportBackup = this.handleImportBackup.bind(this);
         this.handleShowBackups = this.handleShowBackups.bind(this);
+        this.handleShowStorageInfo = this.handleShowStorageInfo.bind(this);
     }
 
     /**
@@ -122,6 +130,26 @@ class BrunosCalculator {
             console.log('✅ IndexedDB inicializovaná');
         } catch (error) {
             console.warn('⚠️ IndexedDB nie je dostupná:', error);
+        }
+
+        // Inicializácia Persistent Storage
+        try {
+            const persistenceResult = await initPersistence();
+
+            if (persistenceResult.persistence.granted) {
+                console.log('✅ Trvalé úložisko AKTÍVNE - dáta chránené');
+            } else if (persistenceResult.persistence.supported) {
+                console.warn('⚠️ Trvalé úložisko ODMIETNUTÉ - odporúčame povoliť');
+            } else {
+                console.warn('⚠️ Trvalé úložisko nie je podporované v tomto prehliadači');
+            }
+
+            // Kontrola zdravia úložiska
+            if (persistenceResult.health.warning || persistenceResult.health.critical) {
+                alert(persistenceResult.health.message + '\n\nOdporúčame exportovať zálohy do súborov!');
+            }
+        } catch (error) {
+            console.warn('⚠️ Chyba pri inicializácii persistence:', error);
         }
 
         // Načítanie dát
@@ -236,11 +264,13 @@ class BrunosCalculator {
         const exportBackupBtn = document.getElementById('exportBackupBtn');
         const importBackupBtn = document.getElementById('importBackupBtn');
         const showBackupsBtn = document.getElementById('showBackupsBtn');
+        const storageInfoBtn = document.getElementById('storageInfoBtn');
 
         if (manualBackupBtn) manualBackupBtn.addEventListener('click', this.handleManualBackup);
         if (exportBackupBtn) exportBackupBtn.addEventListener('click', this.handleExportBackup);
         if (importBackupBtn) importBackupBtn.addEventListener('click', this.handleImportBackup);
         if (showBackupsBtn) showBackupsBtn.addEventListener('click', this.handleShowBackups);
+        if (storageInfoBtn) storageInfoBtn.addEventListener('click', this.handleShowStorageInfo);
     }
 
     /**
@@ -798,6 +828,19 @@ class BrunosCalculator {
             } else {
                 alert('❌ Neplatné číslo zálohy.');
             }
+        }
+    }
+
+    /**
+     * Handler pre zobrazenie informácií o úložisku
+     */
+    async handleShowStorageInfo() {
+        try {
+            const message = await showStorageInfo();
+            alert(message);
+        } catch (error) {
+            console.error('Chyba pri zobrazovaní storage info:', error);
+            alert('❌ Chyba pri získavaní informácií o úložisku.');
         }
     }
 
