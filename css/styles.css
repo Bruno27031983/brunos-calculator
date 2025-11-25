@@ -799,3 +799,10 @@ body.dark-mode .time-clock-icon {
 body.dark-mode .time-clock-icon:hover {
     opacity: 1;
 }
+
+/* Mobile responsiveness - hide clock icons on small screens */
+@media (max-width: 768px) {
+    .time-clock-icon {
+        display: none;
+    }
+}
