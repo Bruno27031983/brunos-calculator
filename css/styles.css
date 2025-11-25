@@ -763,30 +763,41 @@ body.dark-mode .status-text {
     width: 100%;
 }
 
+.time-input-wrapper input {
+    padding-right: 25px; /* Priestor pre ikonu */
+}
+
 .time-clock-icon {
     position: absolute;
-    right: 5px;
+    right: 2px;
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
-    font-size: 18px;
-    padding: 2px 4px;
+    font-size: 13px;
+    padding: 2px;
     background: transparent;
     border: none;
-    opacity: 0.6;
+    opacity: 0.35;
     transition: all 0.2s;
     user-select: none;
+    pointer-events: all;
+    line-height: 1;
 }
 
 .time-clock-icon:hover {
-    opacity: 1;
-    transform: translateY(-50%) scale(1.2);
+    opacity: 0.9;
+    transform: translateY(-50%) scale(1.15);
 }
 
 .time-clock-icon:active {
-    transform: translateY(-50%) scale(0.9);
+    transform: translateY(-50%) scale(0.95);
 }
 
 body.dark-mode .time-clock-icon {
     filter: brightness(1.5);
+    opacity: 0.4;
+}
+
+body.dark-mode .time-clock-icon:hover {
+    opacity: 1;
 }
