@@ -799,3 +799,19 @@ body.dark-mode .time-clock-icon {
 body.dark-mode .time-clock-icon:hover {
     opacity: 1;
 }
+
+/* Mobile responsiveness - smaller clock icons on small screens */
+@media (max-width: 768px) {
+    .time-input-wrapper {
+        gap: 2px; /* Menší odstup na mobile */
+    }
+
+    .time-clock-icon {
+        font-size: 12px; /* Menšia ikona */
+        padding: 1px 2px; /* Menší padding */
+    }
+
+    .time-clock-icon:hover {
+        transform: scale(1.1); /* Menšie zväčšenie na mobile */
+    }
+}
