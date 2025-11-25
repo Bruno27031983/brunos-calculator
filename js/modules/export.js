@@ -5,6 +5,7 @@
 import { PDF_SETTINGS } from './constants.js';
 import { getDaysInMonth, getDayName, getMonthName } from './calculator.js';
 import { getInputValue, getTextContent, createDayElementId } from './ui.js';
+import { showError, showInfo } from './toast.js';
 
 /**
  * Zozbiera dáta z tabuľky pre export
@@ -113,7 +114,7 @@ export function exportToPDF(year, month, employeeName, totalSummary) {
         return true;
     } catch (error) {
         console.error('Chyba pri exporte do PDF:', error);
-        alert('Nastala chyba pri exporte do PDF.');
+        showError('Nastala chyba pri exporte do PDF.');
         return false;
     }
 }
@@ -157,7 +158,7 @@ export function exportToExcel(year, month, employeeName) {
         return true;
     } catch (error) {
         console.error('Chyba pri exporte do Excelu:', error);
-        alert('Nastala chyba pri exporte do Excelu.');
+        showError('Nastala chyba pri exporte do Excelu.');
         return false;
     }
 }
@@ -192,16 +193,16 @@ export function sendPDF(year, month, employeeName, totalSummary) {
             })
             .catch(error => {
                 console.error('Chyba pri odosielaní PDF:', error);
-                alert('Nastala chyba pri odosielaní PDF.');
+                showError('Nastala chyba pri odosielaní PDF.');
             });
             return true;
         } else {
-            alert('Funkcia zdieľania súborov nie je podporovaná vo vašom prehliadači.');
+            showInfo('Funkcia zdieľania súborov nie je podporovaná vo vašom prehliadači.');
             return false;
         }
     } catch (error) {
         console.error('Chyba pri vytváraní PDF na odoslanie:', error);
-        alert('Nastala chyba pri vytváraní PDF.');
+        showError('Nastala chyba pri vytváraní PDF.');
         return false;
     }
 }
@@ -307,7 +308,7 @@ export function importFromExcel(year, month, onSuccess, onError) {
                 if (onError) {
                     onError(error);
                 } else {
-                    alert(`Chyba pri importe dát z Excelu: ${error.message}`);
+                    showError(`Chyba pri importe dát z Excelu: ${error.message}`);
                 }
             }
         };

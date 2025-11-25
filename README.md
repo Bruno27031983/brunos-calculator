@@ -17,6 +17,16 @@ Bruno's Calculator je jednoduchá, ale výkonná aplikácia určená na sledovan
 - ✅ Tmavý režim
 - ✅ Lokálne uloženie dát (localStorage)
 - ✅ Responsívny dizajn
+- 🛡️ **MAXIMÁLNA OCHRANA DÁT:**
+  - Multi-level backup systém (localStorage + IndexedDB)
+  - **Persistent Storage API** - Trvalé úložisko (nebude automaticky vymazané)
+  - Automatické zálohovanie každých 5 minút
+  - Manuálne zálohy na požiadanie
+  - Export/Import záloh do JSON súborov
+  - Obnovenie dát z ktorejkoľvek zálohy
+  - Ochrana pred stratou dát pri zatvorení prehliadača
+  - Prvotná záloha pri štarte aplikácie
+  - Monitoring dostupného miesta a varovania
 
 ## Štruktúra projektu
 
@@ -31,8 +41,11 @@ brunos-calculator/
 │       ├── constants.js  # Konštanty a konfigurácia
 │       ├── storage.js    # Práca s localStorage
 │       ├── calculator.js # Výpočtové funkcie
-│       ├── ui.js        # UI a DOM manipulácia
-│       └── export.js    # Export do PDF/Excel
+│       ├── ui.js          # UI a DOM manipulácia
+│       ├── export.js      # Export do PDF/Excel
+│       ├── indexeddb.js   # IndexedDB wrapper
+│       ├── backup.js      # Multi-level backup systém
+│       └── persistence.js # Persistent Storage API
 ├── .gitignore
 └── README.md
 ```
@@ -44,8 +57,12 @@ brunos-calculator/
 - **JavaScript ES6+** - Modulárna architektúra
 - **jsPDF** - Generovanie PDF dokumentov
 - **SheetJS (XLSX)** - Práca s Excel súbormi
-- **LocalStorage API** - Lokálne úložisko dát
+- **LocalStorage API** - Primárne lokálne úložisko
+- **IndexedDB API** - Sekundárne úložisko s väčšou kapacitou
+- **Persistent Storage API** - Trvalé úložisko (ochrana pred automatickým mazaním)
+- **Storage Estimation API** - Monitoring dostupného miesta
 - **Web Share API** - Zdieľanie súborov
+- **Beforeunload API** - Ochrana pred stratou dát
 
 ## Refaktoring a vylepšenia
 
@@ -101,6 +118,23 @@ brunos-calculator/
    - State management
    - Lifecycle management
 
+8. **IndexedDB modul**
+   - Wrapper pre IndexedDB API
+   - Asynchronné operácie
+   - Error handling
+
+9. **Backup modul**
+   - Multi-level zálohovací systém
+   - Automatické a manuálne zálohy
+   - Recovery mechanizmy
+   - Export/Import do súborov
+
+10. **Persistence modul**
+   - Persistent Storage API wrapper
+   - Žiadosť o trvalé úložisko
+   - Monitoring dostupného miesta
+   - Varovania pri kritickom stave
+
 ## Inštalácia a spustenie
 
 ### Lokálne spustenie
@@ -136,6 +170,147 @@ Aplikáciu je možné nasadiť na:
    - Hrubú mzdu
    - Čistú mzdu
    - Celkové štatistiky
+
+## 🛡️ Systém ochrany a zálohovania dát
+
+Aplikácia obsahuje **maximálne zabezpečenie proti strate dát** s multi-level backup systémom:
+
+### Vrstvy ochrany:
+
+1. **Primárne úložisko:** localStorage (rýchle, 5-10 MB limit)
+2. **Sekundárne úložisko:** IndexedDB (väčšia kapacita, 50+ MB)
+3. **Persistent Storage:** Trvalé úložisko (nebude automaticky vymazané prehliadačom)
+4. **Súborové zálohy:** Export do JSON súborov (neobmedzené)
+
+### Automatické zálohovanie:
+
+- ✅ **Prvotná záloha** pri štarte aplikácie
+- ✅ **Periodické zálohovanie** každých 5 minút
+- ✅ **Limit záloh:** Max 10 automatických záloh (staršie sa automaticky mažú)
+- ✅ **Redundancia:** Dáta sa ukladajú do localStorage **A** IndexedDB súčasne
+
+### Ochrana pred stratou:
+
+- 🛡️ **Beforeunload ochrana:** Varovanie pri zatvorení stránky s neuloženými zmenami
+- 🛡️ **Multi-storage:** Ak zlyhá localStorage, použije sa IndexedDB
+- 🛡️ **Safety backup:** Pred obnovením zálohy sa vytvára bezpečnostná kópia
+
+### Manuálne operácie:
+
+#### 1. Vytvorenie manuálnej zálohy
+```
+Kliknite: 💾 Vytvoriť zálohu
+```
+Vytvorí trvalú zálohu v localStorage a IndexedDB.
+
+#### 2. Export zálohy do súboru
+```
+Kliknite: 📥 Exportovať zálohu
+```
+Stiahne JSON súbor s kompletnou zálohou všetkých dát.
+
+#### 3. Import zálohy zo súboru
+```
+Kliknite: 📤 Importovať zálohu
+```
+Obnoví dáta z predtým exportovaného JSON súboru.
+
+#### 4. Zobrazenie a obnovenie záloh
+```
+Kliknite: 📋 Zobraziť zálohy
+```
+Ukáže zoznam všetkých dostupných záloh s možnosťou obnovenia.
+
+#### 5. Informácie o úložisku
+```
+Kliknite: 💽 Info o úložisku
+```
+Zobrazí:
+- ✅/⚠️ Status trvalého úložiska (Persistent Storage)
+- 📊 Využitie úložiska (použité/dostupné/kvóta)
+- ⚠️ Varovania pri kritickom stave úložiska
+
+### Štatistiky záloh:
+
+Pri zobrazení záloh uvidíte:
+- 📊 Celkový počet záloh
+- 🔄 Počet automatických záloh
+- 📝 Počet manuálnych záloh
+- 💾 Celková veľkosť dát
+- 📍 Umiestnenie (localStorage/IndexedDB)
+- 📅 Dátum a čas vytvorenia každej zálohy
+
+### Príklad použitia backup API:
+
+```javascript
+import { saveBackup, restoreFromBackup, listBackups } from './modules/backup.js';
+
+// Vytvorenie zálohy
+const data = {
+  monthData: {...},
+  hourlyWage: 10,
+  // ... ostatné dáta
+};
+
+await saveBackup(data, 'my_backup');
+
+// Zobrazenie záloh
+const backups = await listBackups();
+console.log(backups);
+
+// Obnovenie zálohy
+const result = await restoreFromBackup('backup_name');
+if (result.success) {
+  console.log('Dáta obnovené!');
+}
+```
+
+### 🔒 Persistent Storage - Trvalé úložisko
+
+Aplikácia automaticky požiada prehliadač o **Persistent Storage**, čo znamená:
+
+**Čo to znamená?**
+- 🛡️ **Ochrana pred automatickým vymazaním** - Prehliadač nebude automaticky mazať vaše dáta pri nedostatku miesta
+- ✅ **Trvalé uloženie** - Dáta zostanú aj po reštarte prehliadača
+- 🔐 **Priorita** - Vaše dáta budú mať vyššiu prioritu než dočasné dáta
+
+**Kedy je Persistent Storage povolené?**
+- ✅ Používateľ má stránku v záložkách
+- ✅ Stránka je často navštevovaná
+- ✅ Používateľ manuálne povolí notifikácie
+- ✅ Aplikácia je nainštalovaná ako PWA
+
+**Kontrola statusu:**
+```
+Kliknite: 💽 Info o úložisku
+```
+
+Zobrazí sa:
+```
+💾 INFORMÁCIE O ÚLOŽISKU
+
+✅ Trvalé úložisko: AKTÍVNE
+   Dáta sú chránené proti automatickému vymazaniu
+
+📊 Využitie úložiska:
+   Použité: 2.45 MB
+   Dostupné: 1024.55 MB
+   Kvóta: 1027.00 MB
+   Využitie: 0.24%
+```
+
+**Ak nie je povolené:**
+- Aplikácia stále funguje normálne
+- Dáta sú uložené, ale môžu byť vymazané pri nedostatku miesta
+- Odporúčame pravidelné exporty do JSON súborov
+
+### Odporúčania:
+
+1. **Pravidelne exportujte** zálohy do JSON súborov (raz týždenne)
+2. **Uchovávajte súbory** na bezpečnom mieste (cloud, USB)
+3. **Testujte obnovu** zálohy občas pre istotu
+4. **Neodstraňujte** browser dáta bez exportu zálohy
+5. **Kontrolujte úložisko** pomocou "💽 Info o úložisku" občas
 
 ## Príklady použitia modulov
 

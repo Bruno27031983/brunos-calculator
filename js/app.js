@@ -52,6 +52,45 @@ import {
     importFromExcel
 } from './modules/export.js';
 
+import {
+    saveBackup,
+    loadBackup,
+    restoreFromBackup,
+    listBackups,
+    autoBackup,
+    startAutoBackup,
+    stopAutoBackup,
+    exportBackupToFile,
+    importBackupFromFile,
+    getBackupStats
+} from './modules/backup.js';
+
+import { initDB } from './modules/indexeddb.js';
+
+import {
+    initPersistence,
+    showStorageInfo,
+    getStorageStatus,
+    checkStorageHealth
+} from './modules/persistence.js';
+
+import {
+    showSuccess,
+    showError,
+    showWarning,
+    showInfo,
+    showConfirm,
+    showPrompt
+} from './modules/toast.js';
+
+import {
+    sanitizeEmployeeName,
+    validateHourlyWage,
+    validateTaxRate,
+    validateBreakTime,
+    validateWorkingHours
+} from './modules/validation.js';
+
 /**
  * Hlavná trieda aplikácie
  */
@@ -70,6 +109,10 @@ class BrunosCalculator {
         // Debounce timer
         this.saveTimer = null;
 
+        // Backup
+        this.autoBackupInterval = null;
+        this.hasUnsavedChanges = false;
+
         // Bind metód
         this.handleTimeInput = this.handleTimeInput.bind(this);
         this.handleBreakInput = this.handleBreakInput.bind(this);
@@ -85,13 +128,46 @@ class BrunosCalculator {
         this.handleDecimalPlacesChange = this.handleDecimalPlacesChange.bind(this);
         this.handleEmployeeNameChange = this.handleEmployeeNameChange.bind(this);
         this.handleSettingsChange = this.handleSettingsChange.bind(this);
+        this.handleManualBackup = this.handleManualBackup.bind(this);
+        this.handleExportBackup = this.handleExportBackup.bind(this);
+        this.handleImportBackup = this.handleImportBackup.bind(this);
+        this.handleShowBackups = this.handleShowBackups.bind(this);
+        this.handleShowStorageInfo = this.handleShowStorageInfo.bind(this);
     }
 
     /**
      * Inicializácia aplikácie
      */
-    init() {
+    async init() {
         console.log('Inicializácia Bruno\'s Calculator...');
+
+        // Inicializácia IndexedDB
+        try {
+            await initDB();
+            console.log('✅ IndexedDB inicializovaná');
+        } catch (error) {
+            console.warn('⚠️ IndexedDB nie je dostupná:', error);
+        }
+
+        // Inicializácia Persistent Storage
+        try {
+            const persistenceResult = await initPersistence();
+
+            if (persistenceResult.persistence.granted) {
+                console.log('✅ Trvalé úložisko AKTÍVNE - dáta chránené');
+            } else if (persistenceResult.persistence.supported) {
+                console.warn('⚠️ Trvalé úložisko ODMIETNUTÉ - odporúčame povoliť');
+            } else {
+                console.warn('⚠️ Trvalé úložisko nie je podporované v tomto prehliadači');
+            }
+
+            // Kontrola zdravia úložiska
+            if (persistenceResult.health.warning || persistenceResult.health.critical) {
+                showWarning(persistenceResult.health.message + '\n\nOdporúčame exportovať zálohy do súborov!', 5000);
+            }
+        } catch (error) {
+            console.warn('⚠️ Chyba pri inicializácii persistence:', error);
+        }
 
         // Načítanie dát
         this.loadData();
@@ -111,7 +187,16 @@ class BrunosCalculator {
         // Aktualizácia veľkosti dát
         updateDataSizeDisplay();
 
-        console.log('Aplikácia inicializovaná');
+        // Spustenie automatického zálohovania
+        this.startAutoBackupSystem();
+
+        // Nastavenie beforeunload ochrany
+        this.setupBeforeUnloadProtection();
+
+        // Vytvorenie prvotnej zálohy
+        await this.createInitialBackup();
+
+        console.log('✅ Aplikácia inicializovaná s backup ochranou');
     }
 
     /**
@@ -190,6 +275,19 @@ class BrunosCalculator {
                 btn.addEventListener('click', this.handleImportExcel);
             }
         });
+
+        // Backup tlačidlá
+        const manualBackupBtn = document.getElementById('manualBackupBtn');
+        const exportBackupBtn = document.getElementById('exportBackupBtn');
+        const importBackupBtn = document.getElementById('importBackupBtn');
+        const showBackupsBtn = document.getElementById('showBackupsBtn');
+        const storageInfoBtn = document.getElementById('storageInfoBtn');
+
+        if (manualBackupBtn) manualBackupBtn.addEventListener('click', this.handleManualBackup);
+        if (exportBackupBtn) exportBackupBtn.addEventListener('click', this.handleExportBackup);
+        if (importBackupBtn) importBackupBtn.addEventListener('click', this.handleImportBackup);
+        if (showBackupsBtn) showBackupsBtn.addEventListener('click', this.handleShowBackups);
+        if (storageInfoBtn) storageInfoBtn.addEventListener('click', this.handleShowStorageInfo);
     }
 
     /**
@@ -300,38 +398,6 @@ class BrunosCalculator {
     }
 
     /**
-     * Uloží dáta do localStorage
-     */
-    saveData() {
-        const daysInMonth = getDaysInMonth(this.currentYear, this.currentMonth);
-        const data = [];
-
-        for (let i = 1; i <= daysInMonth; i++) {
-            const inputData = getDayInputData(this.currentYear, this.currentMonth, i);
-            data.push(inputData);
-        }
-
-        if (!this.monthData[this.currentYear]) {
-            this.monthData[this.currentYear] = {};
-        }
-        this.monthData[this.currentYear][this.currentMonth] = data;
-
-        const success = saveAllData({
-            monthData: this.monthData,
-            hourlyWage: this.hourlyWage,
-            taxRate: this.taxRate,
-            isDarkMode: this.isDarkMode,
-            decimalPlaces: this.decimalPlaces,
-            employeeName: this.employeeName
-        });
-
-        if (success) {
-            updateDataSizeDisplay();
-            showSaveNotification();
-        }
-    }
-
-    /**
      * Handler pre zmenu času
      */
     handleTimeInput(day, type) {
@@ -353,7 +419,7 @@ class BrunosCalculator {
             const nextId = createDayElementId(this.currentYear, this.currentMonth, day, nextType);
             focusNextElement(nextId);
         } else if (formatted.length === 5) {
-            alert("Neplatný čas. Prosím, zadajte čas vo formáte HH:MM (napr. 06:30 pre 6:30).");
+            showError("Neplatný čas. Prosím, zadajte čas vo formáte HH:MM (napr. 06:30 pre 6:30).");
             input.value = '';
         }
 
@@ -391,8 +457,18 @@ class BrunosCalculator {
     /**
      * Handler pre reset všetkých dát
      */
-    handleResetAll() {
-        if (confirm('Ste si istý, že chcete resetovať dáta pre aktuálny mesiac? Táto akcia sa nedá vrátiť späť.')) {
+    async handleResetAll() {
+        const confirmed = await showConfirm(
+            'Ste si istý, že chcete resetovať dáta pre aktuálny mesiac? Táto akcia sa nedá vrátiť späť.',
+            {
+                title: 'Resetovať všetky dáta',
+                confirmText: 'Resetovať',
+                cancelText: 'Zrušiť',
+                type: 'warning'
+            }
+        );
+
+        if (confirmed) {
             if (this.monthData[this.currentYear] && this.monthData[this.currentYear][this.currentMonth]) {
                 delete this.monthData[this.currentYear][this.currentMonth];
             }
@@ -400,6 +476,7 @@ class BrunosCalculator {
             this.createTable();
             this.calculateTotal();
             this.saveData();
+            showSuccess('Dáta pre aktuálny mesiac boli resetované.');
         }
     }
 
@@ -459,12 +536,12 @@ class BrunosCalculator {
                 this.calculateTotal();
                 this.saveData();
 
-                alert('Dáta boli úspešne importované z Excelu.');
+                showSuccess('Dáta boli úspešne importované z Excelu.');
             },
             (error) => {
                 // Chyba pri importe
                 console.error('Chyba pri importe:', error);
-                alert(`Chyba pri importe dát z Excelu: ${error.message}`);
+                showError(`Chyba pri importe dát z Excelu: ${error.message}`);
             }
         );
     }
@@ -509,7 +586,15 @@ class BrunosCalculator {
      * Handler pre zmenu mena pracovníka
      */
     handleEmployeeNameChange() {
-        this.employeeName = document.getElementById('employeeNameInput').value.trim();
+        const rawName = document.getElementById('employeeNameInput').value;
+        this.employeeName = sanitizeEmployeeName(rawName);
+
+        // Ak bolo meno sanitizované, aktualizujeme input
+        if (rawName !== this.employeeName) {
+            document.getElementById('employeeNameInput').value = this.employeeName;
+            showInfo('Niektoré znaky boli odstránené z mena pre bezpečnosť.');
+        }
+
         console.log(`Zmena mena pracovníka: ${this.employeeName}`);
         this.debouncedSave();
     }
@@ -518,8 +603,25 @@ class BrunosCalculator {
      * Handler pre zmenu nastavení (mzda, dane)
      */
     handleSettingsChange() {
-        this.hourlyWage = parseFloat(document.getElementById('hourlyWageInput').value);
-        this.taxRate = parseFloat(document.getElementById('taxRateInput').value) / 100;
+        const wageValue = document.getElementById('hourlyWageInput').value;
+        const taxValue = document.getElementById('taxRateInput').value;
+
+        // Validácia hodinovej mzdy
+        const wageValidation = validateHourlyWage(wageValue);
+        if (!wageValidation.valid) {
+            showError(wageValidation.error);
+            return;
+        }
+
+        // Validácia daňovej sadzby
+        const taxValidation = validateTaxRate(taxValue);
+        if (!taxValidation.valid) {
+            showError(taxValidation.error);
+            return;
+        }
+
+        this.hourlyWage = wageValidation.value;
+        this.taxRate = taxValidation.value / 100;
         console.log(`Zmena nastavení: mzda=${this.hourlyWage}, dane=${this.taxRate * 100}%`);
 
         const daysInMonth = getDaysInMonth(this.currentYear, this.currentMonth);
@@ -529,6 +631,315 @@ class BrunosCalculator {
 
         this.calculateTotal();
         this.debouncedSave();
+    }
+
+    /**
+     * Nastavenie ochrany pred zatvorením stránky
+     */
+    setupBeforeUnloadProtection() {
+        window.addEventListener('beforeunload', (event) => {
+            if (this.hasUnsavedChanges) {
+                event.preventDefault();
+                event.returnValue = 'Máte neuložené zmeny. Naozaj chcete zatvoriť stránku?';
+                return event.returnValue;
+            }
+        });
+        console.log('🛡️ Ochrana pred stratou dát aktivovaná');
+    }
+
+    /**
+     * Spustenie systému automatického zálohovania
+     */
+    startAutoBackupSystem() {
+        this.autoBackupInterval = startAutoBackup(() => this.getAllData());
+        console.log('🔄 Automatické zálohovanie spustené');
+    }
+
+    /**
+     * Zastavenie automatického zálohovania
+     */
+    stopAutoBackupSystem() {
+        if (this.autoBackupInterval) {
+            stopAutoBackup(this.autoBackupInterval);
+            this.autoBackupInterval = null;
+        }
+    }
+
+    /**
+     * Vytvorenie prvotnej zálohy pri štarte
+     */
+    async createInitialBackup() {
+        try {
+            const data = this.getAllData();
+            await saveBackup(data, 'backup_initial_' + Date.now());
+            console.log('✅ Prvotná záloha vytvorená');
+        } catch (error) {
+            console.warn('⚠️ Nepodarilo sa vytvoriť prvotný backup:', error);
+        }
+    }
+
+    /**
+     * Získa všetky dáta aplikácie
+     */
+    getAllData() {
+        return {
+            monthData: this.monthData,
+            hourlyWage: this.hourlyWage,
+            taxRate: this.taxRate,
+            isDarkMode: this.isDarkMode,
+            decimalPlaces: this.decimalPlaces,
+            employeeName: this.employeeName
+        };
+    }
+
+    /**
+     * Handler pre manuálnu zálohu
+     */
+    async handleManualBackup() {
+        try {
+            const data = this.getAllData();
+            const result = await saveBackup(data, `backup_manual_${Date.now()}`);
+
+            if (result.success) {
+                showSuccess('Manuálna záloha úspešne vytvorená!');
+                this.hasUnsavedChanges = false;
+            } else {
+                showWarning('Záloha sa nepodarila vytvoriť v žiadnom úložisku.');
+            }
+        } catch (error) {
+            console.error('Chyba pri vytváraní manuálnej zálohy:', error);
+            showError('Chyba pri vytváraní zálohy.');
+        }
+    }
+
+    /**
+     * Handler pre export zálohy do súboru
+     */
+    handleExportBackup() {
+        try {
+            const data = this.getAllData();
+            const success = exportBackupToFile(data);
+
+            if (success) {
+                showSuccess('Záloha exportovaná do súboru!');
+            } else {
+                showError('Chyba pri exporte zálohy.');
+            }
+        } catch (error) {
+            console.error('Chyba pri exporte zálohy:', error);
+            showError('Chyba pri exporte zálohy.');
+        }
+    }
+
+    /**
+     * Handler pre import zálohy zo súboru
+     */
+    async handleImportBackup() {
+        const confirmed = await showConfirm(
+            'Import zálohy prepíše všetky aktuálne dáta. Pokračovať?',
+            {
+                title: 'Import zálohy',
+                confirmText: 'Importovať',
+                cancelText: 'Zrušiť',
+                type: 'warning'
+            }
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        importBackupFromFile((result) => {
+            if (result.success) {
+                // Obnovenie dát
+                const data = result.backup.data;
+
+                this.monthData = data.monthData || {};
+                this.hourlyWage = data.hourlyWage || DEFAULT_HOURLY_WAGE;
+                this.taxRate = data.taxRate || (DEFAULT_TAX_RATE / 100);
+                this.decimalPlaces = data.decimalPlaces || DEFAULT_DECIMAL_PLACES;
+                this.employeeName = data.employeeName || '';
+                this.isDarkMode = data.isDarkMode || false;
+
+                // Aktualizácia UI
+                document.getElementById('hourlyWageInput').value = this.hourlyWage;
+                document.getElementById('taxRateInput').value = (this.taxRate * 100).toFixed(1);
+                document.getElementById('decimalPlacesSelect').value = this.decimalPlaces;
+                document.getElementById('employeeNameInput').value = this.employeeName;
+
+                // Uloženie a obnovenie
+                this.saveData();
+                this.createTable();
+                this.calculateTotal();
+                applyDarkMode(this.isDarkMode);
+
+                showSuccess('Záloha úspešne importovaná!\n\nDátum zálohy: ' + new Date(result.backup.timestamp).toLocaleString(), 4000);
+            } else {
+                showError('Chyba pri importe zálohy: ' + result.error);
+            }
+        });
+    }
+
+    /**
+     * Handler pre zobrazenie zoznamu záloh
+     */
+    async handleShowBackups() {
+        try {
+            const backups = await listBackups();
+            const stats = await getBackupStats();
+
+            if (backups.length === 0) {
+                showInfo('Nenašli sa žiadne zálohy.');
+                return;
+            }
+
+            let message = `📊 ŠTATISTIKY ZÁLOH\n\n`;
+            message += `Celkový počet záloh: ${stats.totalBackups}\n`;
+            message += `Automatické: ${stats.autoBackups}\n`;
+            message += `Manuálne: ${stats.manualBackups}\n`;
+            message += `Celková veľkosť: ${(stats.totalSize / 1024).toFixed(2)} KB\n`;
+            message += `\nÚložiská:\n`;
+            message += `  - localStorage: ${stats.sources.localStorage}\n`;
+            message += `  - IndexedDB: ${stats.sources.indexedDB}\n`;
+            message += `\n━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+            message += `📋 POSLEDNÝCH 10 ZÁLOH:\n\n`;
+
+            backups.slice(0, 10).forEach((backup, index) => {
+                const date = new Date(backup.timestamp);
+                const type = backup.name.includes('auto') ? '🔄 Auto' :
+                            backup.name.includes('manual') ? '📝 Manuál' :
+                            backup.name.includes('initial') ? '🎬 Init' : '💾 Iné';
+
+                message += `${index + 1}. ${type}\n`;
+                message += `   ${date.toLocaleString('sk-SK')}\n`;
+                message += `   ${(backup.size / 1024).toFixed(2)} KB (${backup.source})\n\n`;
+            });
+
+            const wantsRestore = await showConfirm(
+                message + '\n\nChcete obnoviť zálohu?',
+                {
+                    title: 'Zálohy',
+                    confirmText: 'Obnoviť zálohu',
+                    cancelText: 'Zavrieť',
+                    type: 'info'
+                }
+            );
+
+            if (wantsRestore) {
+                await this.showRestoreDialog(backups);
+            }
+        } catch (error) {
+            console.error('Chyba pri zobrazovaní záloh:', error);
+            showError('Chyba pri načítavaní záloh.');
+        }
+    }
+
+    /**
+     * Zobrazí dialóg pre obnovenie zálohy
+     */
+    async showRestoreDialog(backups) {
+        let message = 'Vyberte číslo zálohy na obnovenie:\n\n';
+
+        backups.slice(0, 10).forEach((backup, index) => {
+            const date = new Date(backup.timestamp);
+            message += `${index + 1}. ${date.toLocaleString('sk-SK')}\n`;
+        });
+
+        const choice = await showPrompt(
+            message,
+            {
+                title: 'Obnovenie zálohy',
+                confirmText: 'Obnoviť',
+                cancelText: 'Zrušiť',
+                placeholder: '1-' + Math.min(10, backups.length)
+            }
+        );
+
+        if (choice && !isNaN(choice)) {
+            const index = parseInt(choice) - 1;
+
+            if (index >= 0 && index < backups.length) {
+                const backupToRestore = backups[index];
+
+                const confirmed = await showConfirm(
+                    `Obnoviť zálohu z ${new Date(backupToRestore.timestamp).toLocaleString('sk-SK')}?\n\nAktuálne dáta budú prepísané!`,
+                    {
+                        title: 'Potvrdenie obnovy',
+                        confirmText: 'Obnoviť',
+                        cancelText: 'Zrušiť',
+                        type: 'warning'
+                    }
+                );
+
+                if (confirmed) {
+                    const result = await restoreFromBackup(backupToRestore.name);
+
+                    if (result.success) {
+                        showSuccess('Záloha úspešne obnovená!\n\nStránka sa znovu načíta.', 3000);
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3000);
+                    } else {
+                        showError('Chyba pri obnovovaní zálohy: ' + result.message);
+                    }
+                }
+            } else {
+                showError('Neplatné číslo zálohy.');
+            }
+        }
+    }
+
+    /**
+     * Handler pre zobrazenie informácií o úložisku
+     */
+    async handleShowStorageInfo() {
+        try {
+            const message = await showStorageInfo();
+            await showConfirm(message, {
+                title: 'Informácie o úložisku',
+                confirmText: 'OK',
+                cancelText: '',
+                type: 'info'
+            });
+        } catch (error) {
+            console.error('Chyba pri zobrazovaní storage info:', error);
+            showError('Chyba pri získavaní informácií o úložisku.');
+        }
+    }
+
+    /**
+     * Uloží dáta do localStorage
+     */
+    saveData() {
+        const daysInMonth = getDaysInMonth(this.currentYear, this.currentMonth);
+        const data = [];
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            const inputData = getDayInputData(this.currentYear, this.currentMonth, i);
+            data.push(inputData);
+        }
+
+        if (!this.monthData[this.currentYear]) {
+            this.monthData[this.currentYear] = {};
+        }
+        this.monthData[this.currentYear][this.currentMonth] = data;
+
+        const success = saveAllData({
+            monthData: this.monthData,
+            hourlyWage: this.hourlyWage,
+            taxRate: this.taxRate,
+            isDarkMode: this.isDarkMode,
+            decimalPlaces: this.decimalPlaces,
+            employeeName: this.employeeName
+        });
+
+        if (success) {
+            updateDataSizeDisplay();
+            showSaveNotification();
+            this.hasUnsavedChanges = false;
+        } else {
+            this.hasUnsavedChanges = true;
+        }
     }
 }
 
