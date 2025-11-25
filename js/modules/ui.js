@@ -1,0 +1,309 @@
+/**
+ * Modul pre UI operácie a DOM manipuláciu
+ */
+
+import {
+    CSS_CLASSES,
+    NOTIFICATION_DURATION,
+    PROGRESS_BAR_COLORS,
+    PROGRESS_BAR_THRESHOLDS,
+    MAX_DATA_SIZE_KB
+} from './constants.js';
+import { calculateDataSize } from './storage.js';
+
+/**
+ * Zobrazí notifikáciu o uložení
+ */
+export function showSaveNotification() {
+    const notification = document.getElementById('saveNotification');
+    if (!notification) return;
+
+    notification.classList.add(CSS_CLASSES.SHOW);
+    setTimeout(() => {
+        notification.classList.remove(CSS_CLASSES.SHOW);
+    }, NOTIFICATION_DURATION);
+}
+
+/**
+ * Aktualizuje progress bar s veľkosťou dát
+ */
+export function updateDataSizeDisplay() {
+    const dataSizeText = document.getElementById('dataSizeText');
+    const dataSizeFill = document.getElementById('dataSizeFill');
+
+    if (!dataSizeText || !dataSizeFill) return;
+
+    const sizeInfo = calculateDataSize();
+    if (!sizeInfo) {
+        dataSizeText.textContent = 'Veľkosť dát: Nepodarilo sa vypočítať';
+        return;
+    }
+
+    const { kilobytes, percentageUsed, isOverLimit } = sizeInfo;
+
+    dataSizeText.textContent = `Veľkosť dát: ${kilobytes} KB / ${MAX_DATA_SIZE_KB} KB`;
+    dataSizeFill.style.width = `${percentageUsed}%`;
+
+    // Nastavenie farby podľa použitia
+    if (percentageUsed > PROGRESS_BAR_THRESHOLDS.DANGER || isOverLimit) {
+        dataSizeFill.style.backgroundColor = PROGRESS_BAR_COLORS.DANGER;
+    } else if (percentageUsed > PROGRESS_BAR_THRESHOLDS.WARNING) {
+        dataSizeFill.style.backgroundColor = PROGRESS_BAR_COLORS.WARNING;
+    } else {
+        dataSizeFill.style.backgroundColor = PROGRESS_BAR_COLORS.NORMAL;
+    }
+
+    if (isOverLimit) {
+        alert(`Aktuálna veľkosť dát (${kilobytes} KB) prekročila maximálnu povolenú veľkosť (${MAX_DATA_SIZE_KB} KB). Pokúste sa znížiť množstvo uložených dát.`);
+        console.warn('Dáta prekročili limit veľkosti.');
+    } else {
+        console.log(`Aktuálna veľkosť dát: ${kilobytes} KB (${percentageUsed}%)`);
+    }
+}
+
+/**
+ * Aplikuje alebo odstráni tmavý režim
+ */
+export function applyDarkMode(isDark) {
+    const elementsToToggle = [
+        document.body,
+        document.querySelector('.container'),
+        ...document.querySelectorAll('table, th, td, input, .btn'),
+        document.getElementById('totalSalary'),
+        document.getElementById('mainTitle'),
+        document.querySelector('.autor-info')
+    ];
+
+    elementsToToggle.forEach(element => {
+        if (element) {
+            if (isDark) {
+                element.classList.add(CSS_CLASSES.DARK_MODE);
+            } else {
+                element.classList.remove(CSS_CLASSES.DARK_MODE);
+            }
+        }
+    });
+
+    const currentDayRow = document.querySelector(`.${CSS_CLASSES.CURRENT_DAY}`);
+    if (currentDayRow) {
+        if (isDark) {
+            currentDayRow.classList.add(CSS_CLASSES.DARK_MODE);
+        } else {
+            currentDayRow.classList.remove(CSS_CLASSES.DARK_MODE);
+        }
+    }
+
+    console.log(`Tmavý režim ${isDark ? 'aktivovaný' : 'deaktivovaný'}`);
+}
+
+/**
+ * Aktualizuje zobrazenie celkových štatistík
+ */
+export function updateTotalDisplay(stats) {
+    const totalSalaryDiv = document.getElementById('totalSalary');
+    if (!totalSalaryDiv) return;
+
+    totalSalaryDiv.innerHTML = `
+        Počet odpracovaných dní: ${stats.daysWithEntries}<br>
+        Celkový odpracovaný čas: ${stats.totalHours}h ${stats.totalMinutesRemainder}m (${stats.totalDecimalHours} h)<br>
+        Celková hrubá mzda: ${stats.totalGrossSalary}€<br>
+        Celková čistá mzda: ${stats.totalNetSalary}€<br>
+        Priemerná čistá mzda: ${stats.averageNetSalary}€<br>
+        <strong>Priemerný odpracovaný čas: ${stats.averageHours}h ${stats.averageMinutes}m (${stats.averageDecimalHours} h)</strong>
+    `;
+}
+
+/**
+ * Získa hodnotu vstupného poľa
+ */
+export function getInputValue(id) {
+    const element = document.getElementById(id);
+    return element ? element.value : '';
+}
+
+/**
+ * Nastaví hodnotu vstupného poľa
+ */
+export function setInputValue(id, value) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.value = value;
+    }
+}
+
+/**
+ * Získa textový obsah elementu
+ */
+export function getTextContent(id) {
+    const element = document.getElementById(id);
+    return element ? element.textContent : '';
+}
+
+/**
+ * Nastaví textový obsah elementu
+ */
+export function setTextContent(id, text) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent = text;
+    }
+}
+
+/**
+ * Presunie focus na nasledujúci element
+ */
+export function focusNextElement(nextId) {
+    const nextElement = document.getElementById(nextId);
+    if (nextElement) {
+        nextElement.focus();
+    }
+}
+
+/**
+ * Vytvorí ID elementu pre konkrétny deň
+ */
+export function createDayElementId(year, month, day, type) {
+    return `${type}-${year}-${month}-${day}`;
+}
+
+/**
+ * Získa element pre konkrétny deň
+ */
+export function getDayElement(year, month, day, type) {
+    const id = createDayElementId(year, month, day, type);
+    return document.getElementById(id);
+}
+
+/**
+ * Vytvorí riadok tabuľky pre jeden deň
+ */
+export function createDayRow(year, month, day, dayName, isCurrentDay, decimalPlaces, handlers) {
+    const row = document.createElement('tr');
+
+    if (isCurrentDay) {
+        row.classList.add(CSS_CLASSES.CURRENT_DAY);
+    }
+
+    const startId = createDayElementId(year, month, day, 'start');
+    const endId = createDayElementId(year, month, day, 'end');
+    const breakId = createDayElementId(year, month, day, 'break');
+    const totalId = createDayElementId(year, month, day, 'total');
+    const grossId = createDayElementId(year, month, day, 'gross');
+    const netId = createDayElementId(year, month, day, 'net');
+
+    row.innerHTML = `
+        <td>Deň ${day} (${dayName})</td>
+        <td><input type="tel" id="${startId}" maxlength="5" pattern="[0-9:]*" inputmode="numeric" placeholder="HH:MM"></td>
+        <td><input type="tel" id="${endId}" maxlength="5" pattern="[0-9:]*" inputmode="numeric" placeholder="HH:MM"></td>
+        <td><input type="number" id="${breakId}" min="0" step="0.5" placeholder="prestávka"></td>
+        <td id="${totalId}">0h 0m (${(0).toFixed(decimalPlaces)} h)</td>
+        <td><input type="number" id="${grossId}" min="0" step="0.01" placeholder="Hrubá Mzda" readonly></td>
+        <td><input type="number" id="${netId}" min="0" step="0.01" placeholder="Čistá Mzda" readonly></td>
+        <td><button class="btn reset-btn" data-day="${day}">Vynulovať</button></td>
+    `;
+
+    // Pridanie event listenerov
+    if (handlers) {
+        setTimeout(() => {
+            const startInput = document.getElementById(startId);
+            const endInput = document.getElementById(endId);
+            const breakInput = document.getElementById(breakId);
+            const resetBtn = row.querySelector('.btn.reset-btn');
+
+            if (startInput && handlers.onTimeInput) {
+                startInput.addEventListener('input', () => handlers.onTimeInput(day, 'start'));
+            }
+
+            if (endInput && handlers.onTimeInput) {
+                endInput.addEventListener('input', () => handlers.onTimeInput(day, 'end'));
+            }
+
+            if (breakInput && handlers.onBreakInput) {
+                breakInput.addEventListener('input', () => handlers.onBreakInput(day));
+            }
+
+            if (resetBtn && handlers.onResetRow) {
+                resetBtn.addEventListener('click', () => handlers.onResetRow(day));
+            }
+        }, 0);
+    }
+
+    return row;
+}
+
+/**
+ * Vyčistí tabuľku pracovných dní
+ */
+export function clearWorkDaysTable() {
+    const workDays = document.getElementById('workDays');
+    if (workDays) {
+        workDays.innerHTML = '';
+    }
+}
+
+/**
+ * Pridá riadok do tabuľky pracovných dní
+ */
+export function appendDayRow(row) {
+    const workDays = document.getElementById('workDays');
+    if (workDays) {
+        workDays.appendChild(row);
+    }
+}
+
+/**
+ * Aktualizuje zobrazenie dát pre jeden deň
+ */
+export function updateDayDisplay(year, month, day, dayData, decimalPlaces) {
+    const totalElement = getDayElement(year, month, day, 'total');
+    const grossElement = getDayElement(year, month, day, 'gross');
+    const netElement = getDayElement(year, month, day, 'net');
+
+    if (totalElement) {
+        totalElement.textContent = dayData.displayTime;
+    }
+
+    if (grossElement) {
+        grossElement.value = dayData.grossSalary;
+    }
+
+    if (netElement) {
+        netElement.value = dayData.netSalary;
+    }
+}
+
+/**
+ * Resetuje zobrazenie dát pre jeden deň
+ */
+export function resetDayDisplay(year, month, day, decimalPlaces) {
+    setInputValue(createDayElementId(year, month, day, 'start'), '');
+    setInputValue(createDayElementId(year, month, day, 'end'), '');
+    setInputValue(createDayElementId(year, month, day, 'break'), '');
+    setTextContent(createDayElementId(year, month, day, 'total'), `0h 0m (${(0).toFixed(decimalPlaces)} h)`);
+    setInputValue(createDayElementId(year, month, day, 'gross'), '0.00');
+    setInputValue(createDayElementId(year, month, day, 'net'), '0.00');
+}
+
+/**
+ * Načíta dáta dňa zo vstupných polí
+ */
+export function getDayInputData(year, month, day) {
+    return {
+        start: getInputValue(createDayElementId(year, month, day, 'start')),
+        end: getInputValue(createDayElementId(year, month, day, 'end')),
+        breakTime: parseFloat(getInputValue(createDayElementId(year, month, day, 'break'))) || 0,
+        gross: getInputValue(createDayElementId(year, month, day, 'gross')),
+        net: getInputValue(createDayElementId(year, month, day, 'net'))
+    };
+}
+
+/**
+ * Naplní vstupné polia dátami dňa
+ */
+export function populateDayInputs(year, month, day, dayData) {
+    setInputValue(createDayElementId(year, month, day, 'start'), dayData.start || '');
+    setInputValue(createDayElementId(year, month, day, 'end'), dayData.end || '');
+    setInputValue(createDayElementId(year, month, day, 'break'), dayData.breakTime || '');
+    setInputValue(createDayElementId(year, month, day, 'gross'), dayData.gross || '0.00');
+    setInputValue(createDayElementId(year, month, day, 'net'), dayData.net || '0.00');
+}
