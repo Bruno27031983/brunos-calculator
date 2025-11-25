@@ -153,6 +153,9 @@ class BrunosCalculator {
         try {
             const persistenceResult = await initPersistence();
 
+            // Aktualizácia UI indikátora stavu
+            this.updatePersistenceStatusUI(persistenceResult);
+
             if (persistenceResult.persistence.granted) {
                 console.log('✅ Trvalé úložisko AKTÍVNE - dáta chránené');
             } else if (persistenceResult.persistence.supported) {
@@ -167,6 +170,7 @@ class BrunosCalculator {
             }
         } catch (error) {
             console.warn('⚠️ Chyba pri inicializácii persistence:', error);
+            this.updatePersistenceStatusUI({ persistence: { supported: false, granted: false } });
         }
 
         // Načítanie dát
@@ -197,6 +201,41 @@ class BrunosCalculator {
         await this.createInitialBackup();
 
         console.log('✅ Aplikácia inicializovaná s backup ochranou');
+    }
+
+    /**
+     * Aktualizuje UI indikátor stavu trvalého úložiska
+     */
+    updatePersistenceStatusUI(persistenceResult) {
+        const dot = document.getElementById('persistenceDot');
+        const text = document.getElementById('persistenceText');
+
+        if (!dot || !text) return;
+
+        // Odstránenie všetkých tried
+        dot.classList.remove('granted', 'denied', 'unsupported');
+
+        if (!persistenceResult || !persistenceResult.persistence) {
+            dot.classList.add('unsupported');
+            text.textContent = 'Úložisko: Chyba';
+            return;
+        }
+
+        const { persistence } = persistenceResult;
+
+        if (!persistence.supported) {
+            dot.classList.add('unsupported');
+            text.textContent = 'Trvalé úložisko: Nepodporované';
+            dot.title = 'Váš prehliadač nepodporuje Persistent Storage API';
+        } else if (persistence.granted) {
+            dot.classList.add('granted');
+            text.textContent = 'Trvalé úložisko: ✓ Aktívne';
+            dot.title = 'Dáta sú chránené pred automatickým vymazaním';
+        } else {
+            dot.classList.add('denied');
+            text.textContent = 'Trvalé úložisko: ✗ Neaktívne';
+            dot.title = 'Prehliadač môže vymazať dáta pri nedostatku miesta';
+        }
     }
 
     /**

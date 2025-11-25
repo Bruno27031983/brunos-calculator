@@ -176,6 +176,23 @@ export function getDayElement(year, month, day, type) {
 }
 
 /**
+ * Vyplní aktuálny čas do time inputu
+ */
+function fillCurrentTime(input, handlers, day, type) {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const currentTime = `${hours}:${minutes}`;
+
+    input.value = currentTime;
+
+    // Trigger the onTimeInput handler if it exists
+    if (handlers && handlers.onTimeInput) {
+        handlers.onTimeInput(day, type);
+    }
+}
+
+/**
  * Vytvorí riadok tabuľky pre jeden deň
  */
 export function createDayRow(year, month, day, dayName, isCurrentDay, decimalPlaces, handlers) {
@@ -201,9 +218,11 @@ export function createDayRow(year, month, day, dayName, isCurrentDay, decimalPla
     dayCell.textContent = `Deň ${day} (${dayName})`;
     row.appendChild(dayCell);
 
-    // Príchod
+    // Príchod s ikonou hodín
     const startCell = document.createElement('td');
     startCell.setAttribute('role', 'cell');
+    const startWrapper = document.createElement('div');
+    startWrapper.className = 'time-input-wrapper';
     const startInput = document.createElement('input');
     startInput.type = 'tel';
     startInput.id = startId;
@@ -212,12 +231,23 @@ export function createDayRow(year, month, day, dayName, isCurrentDay, decimalPla
     startInput.inputMode = 'numeric';
     startInput.placeholder = 'HH:MM';
     startInput.setAttribute('aria-label', `Čas príchodu pre deň ${day} ${dayName}`);
-    startCell.appendChild(startInput);
+    const startClockIcon = document.createElement('span');
+    startClockIcon.className = 'time-clock-icon';
+    startClockIcon.textContent = '🕐';
+    startClockIcon.setAttribute('role', 'button');
+    startClockIcon.setAttribute('aria-label', 'Vyplniť aktuálny čas');
+    startClockIcon.setAttribute('title', 'Kliknutím vyplníte aktuálny čas');
+    startClockIcon.addEventListener('click', () => fillCurrentTime(startInput, handlers, day, 'start'));
+    startWrapper.appendChild(startInput);
+    startWrapper.appendChild(startClockIcon);
+    startCell.appendChild(startWrapper);
     row.appendChild(startCell);
 
-    // Odchod
+    // Odchod s ikonou hodín
     const endCell = document.createElement('td');
     endCell.setAttribute('role', 'cell');
+    const endWrapper = document.createElement('div');
+    endWrapper.className = 'time-input-wrapper';
     const endInput = document.createElement('input');
     endInput.type = 'tel';
     endInput.id = endId;
@@ -226,7 +256,16 @@ export function createDayRow(year, month, day, dayName, isCurrentDay, decimalPla
     endInput.inputMode = 'numeric';
     endInput.placeholder = 'HH:MM';
     endInput.setAttribute('aria-label', `Čas odchodu pre deň ${day} ${dayName}`);
-    endCell.appendChild(endInput);
+    const endClockIcon = document.createElement('span');
+    endClockIcon.className = 'time-clock-icon';
+    endClockIcon.textContent = '🕐';
+    endClockIcon.setAttribute('role', 'button');
+    endClockIcon.setAttribute('aria-label', 'Vyplniť aktuálny čas');
+    endClockIcon.setAttribute('title', 'Kliknutím vyplníte aktuálny čas');
+    endClockIcon.addEventListener('click', () => fillCurrentTime(endInput, handlers, day, 'end'));
+    endWrapper.appendChild(endInput);
+    endWrapper.appendChild(endClockIcon);
+    endCell.appendChild(endWrapper);
     row.appendChild(endCell);
 
     // Prestávka

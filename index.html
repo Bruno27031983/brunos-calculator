@@ -5,17 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bruno's Calculator</title>
 
-    <!-- External Libraries with SRI -->
+    <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-            integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNougY4QE0TGdJrZv+oVOl/fJNRt/9e4CXBMWubLdYQkpU4mUw2gltb6Q=="
             crossorigin="anonymous"
             referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.15/jspdf.plugin.autotable.min.js"
-            integrity="sha512-7bq4nUicJo3FPZj0vTRKdYl1+HLJKlvW7kzZXiJXcMBBG1nCMjGXBfMzjR9BvKpvPwXnzuWlPeP3HuiPLKqRDg=="
             crossorigin="anonymous"
             referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"
-            integrity="sha512-lkHQOC1Fv2ljWfNJCTxnBZ8ng9bgPCnbdvG7fD2GxZqVlJ3WW6EQhp7bSHGx3b+xKkLQ/xLbj7UXS/5Y4RxkbQ=="
             crossorigin="anonymous"
             referrerpolicy="no-referrer"></script>
 
@@ -27,6 +24,12 @@
         <div class="autor-info">Vytvoril a financoval Bruno</div>
         <h1 id="mainTitle">Bruno's Calculator</h1>
         <h2></h2>
+
+        <!-- Persistent Storage Status Indicator -->
+        <div id="persistenceStatus" class="persistence-status" aria-live="polite">
+            <span class="status-dot" id="persistenceDot" title="Stav trvalého úložiska"></span>
+            <span class="status-text" id="persistenceText">Kontrola úložiska...</span>
+        </div>
 
         <div class="settings">
             <div>
