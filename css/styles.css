@@ -74,7 +74,7 @@ table {
 }
 
 th, td {
-    padding: 6px 4px;
+    padding: 5px 3px;
     border: 1px solid #ddd;
     text-align: left;
     font-size: 16px;
@@ -106,7 +106,7 @@ th:nth-child(8), td:nth-child(8) {
 
 input[type="tel"], input[type="number"], input[type="text"] {
     width: 100%;
-    padding: 4px 3px;
+    padding: 4px 2px;
     box-sizing: border-box;
     background-color: #ffffd0;
     font-size: 16px;
@@ -326,7 +326,7 @@ body.dark-mode .autor-info {
         min-width: 800px;
     }
     th, td {
-        padding: 6px 4px;
+        padding: 5px 3px;
         font-size: 16px;
     }
     .btn-container {
@@ -766,7 +766,7 @@ body.dark-mode .status-text {
 .time-input-wrapper {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     width: 100%;
 }
 
@@ -809,16 +809,16 @@ body.dark-mode .time-clock-icon:hover {
 /* Mobile responsiveness - smaller clock icons on small screens */
 @media (max-width: 768px) {
     .time-input-wrapper {
-        gap: 4px; /* Odstup medzi input a ikonou */
+        gap: 3px; /* Odstup medzi input a ikonou */
     }
 
     .time-input-wrapper input {
-        min-width: 42px; /* Minimálna šírka pre zobrazenie MM textu */
+        min-width: 40px; /* Minimálna šírka pre zobrazenie MM textu */
     }
 
     .time-clock-icon {
-        font-size: 11px; /* Menšia ikona */
-        padding: 1px 2px;
+        font-size: 10px; /* Menšia ikona */
+        padding: 1px;
     }
 
     .time-clock-icon:hover {
