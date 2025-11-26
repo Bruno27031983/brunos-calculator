@@ -1,5 +1,5 @@
 // Service Worker pre Bruno's Calculator PWA
-const CACHE_NAME = 'brunos-calculator-v3';
+const CACHE_NAME = 'brunos-calculator-v4';
 const urlsToCache = [
   './',
   './index.html',
@@ -61,6 +61,11 @@ self.addEventListener('activate', (event) => {
 
 // Fetch stratégia: Network First, potom Cache
 self.addEventListener('fetch', (event) => {
+  // Cache API podporuje iba GET requesty
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
