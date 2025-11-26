@@ -1,0 +1,14 @@
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fialové pozadie -->
+  <rect width="512" height="512" fill="#7B2CBF" rx="64"/>
+
+  <!-- Veľké biele B v strede -->
+  <text
+    x="256"
+    y="340"
+    font-family="Arial, sans-serif"
+    font-size="320"
+    font-weight="bold"
+    fill="white"
+    text-anchor="middle">B</text>
+</svg>

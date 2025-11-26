@@ -987,3 +987,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const app = new BrunosCalculator();
     app.init();
 });
+
+// Registrácia Service Workera pre PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+                console.log('Service Worker zaregistrovaný:', registration.scope);
+            })
+            .catch((error) => {
+                console.log('Service Worker registrácia zlyhala:', error);
+            });
+    });
+}
