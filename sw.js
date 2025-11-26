@@ -1,5 +1,5 @@
 // Service Worker pre Bruno's Calculator PWA
-const CACHE_NAME = 'brunos-calculator-v2';
+const CACHE_NAME = 'brunos-calculator-v3';
 const urlsToCache = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const urlsToCache = [
   './js/modules/persistence.js',
   './js/modules/constants.js',
   './js/modules/toast.js',
+  './js/modules/indexeddb.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
@@ -22,8 +23,18 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Cache otvorený');
-        return cache.addAll(urlsToCache);
+        console.log('✅ Cache otvorený');
+        // Cache súbory individuálne, aby jeden zlyhanie nespôsobilo celkové zlyhanie
+        return Promise.allSettled(
+          urlsToCache.map(url =>
+            cache.add(url).catch(err => {
+              console.warn(`⚠️ Nepodarilo sa cachovať ${url}:`, err);
+              return null;
+            })
+          )
+        ).then(() => {
+          console.log('✅ Service Worker nainštalovaný');
+        });
       })
   );
   // Aktivovať nový service worker okamžite
