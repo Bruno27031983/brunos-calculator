@@ -1,18 +1,20 @@
 // Service Worker pre Bruno's Calculator PWA
-const CACHE_NAME = 'brunos-calculator-v1';
+const CACHE_NAME = 'brunos-calculator-v2';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/css/styles.css',
-  '/js/app.js',
-  '/js/modules/storage.js',
-  '/js/modules/ui.js',
-  '/js/modules/calculations.js',
-  '/js/modules/backup.js',
-  '/js/modules/persistence.js',
-  '/js/modules/constants.js',
-  '/js/modules/toast.js',
-  '/manifest.json'
+  './',
+  './index.html',
+  './css/styles.css',
+  './js/app.js',
+  './js/modules/storage.js',
+  './js/modules/ui.js',
+  './js/modules/calculations.js',
+  './js/modules/backup.js',
+  './js/modules/persistence.js',
+  './js/modules/constants.js',
+  './js/modules/toast.js',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 // Inštalácia Service Workera
