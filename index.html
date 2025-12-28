@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bruno's Calculator</title>
 
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self';">
+
     <!-- PWA Meta Tags -->
     <meta name="description" content="Kalkulačka pracovného času s výpočtom mzdy a exportom do PDF">
     <meta name="theme-color" content="#4CAF50">
@@ -15,14 +18,17 @@
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="./icon-192.png">
 
-    <!-- External Libraries -->
+    <!-- External Libraries with SRI -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+            integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA=="
             crossorigin="anonymous"
             referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.15/jspdf.plugin.autotable.min.js"
+            integrity="sha512-+roIpMp+Un+hPKFvjOylx+dUvV8pPPHZo9xpS+bGzkyFOJfkzbECIfQz0qQ3WMK/xKSmRhy9vlqLqpAP+WGrYQ=="
             crossorigin="anonymous"
             referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"
+            integrity="sha512-BMSP4Jo64R7h3JXFZL+/rL/X8WsQ8TnrRvVTz8Dk36oLjZw7IwSMO1DMXgvAH3YGTcwRSXoTLN/DJSrY0QwkA=="
             crossorigin="anonymous"
             referrerpolicy="no-referrer"></script>
 

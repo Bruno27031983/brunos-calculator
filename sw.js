@@ -1,8 +1,12 @@
 // Service Worker pre Bruno's Calculator PWA
-const CACHE_NAME = 'brunos-calculator-v4';
+const CACHE_NAME = 'brunos-calculator-v5';
+const FETCH_TIMEOUT = 5000; // 5 sekúnd timeout pre fetch requesty
+const OFFLINE_PAGE = './offline.html';
+
 const urlsToCache = [
   './',
   './index.html',
+  './offline.html',
   './css/styles.css',
   './js/app.js',
   './js/modules/storage.js',
@@ -17,6 +21,27 @@ const urlsToCache = [
   './icon-192.png',
   './icon-512.png'
 ];
+
+/**
+ * Fetch s timeoutom
+ */
+function fetchWithTimeout(request, timeout = FETCH_TIMEOUT) {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error('Fetch timeout'));
+    }, timeout);
+
+    fetch(request)
+      .then((response) => {
+        clearTimeout(timeoutId);
+        resolve(response);
+      })
+      .catch((error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+}
 
 // Inštalácia Service Workera
 self.addEventListener('install', (event) => {
@@ -59,7 +84,7 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Fetch stratégia: Network First, potom Cache
+// Fetch stratégia: Network First s timeoutom, potom Cache, potom Offline stránka
 self.addEventListener('fetch', (event) => {
   // Cache API podporuje iba GET requesty
   if (event.request.method !== 'GET') {
@@ -67,7 +92,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    fetch(event.request)
+    fetchWithTimeout(event.request)
       .then((response) => {
         // Ak je odpoveď OK, uložiť do cache
         if (response.status === 200) {
@@ -78,9 +103,27 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() => {
-        // Ak fetch zlyhá, skúsiť cache
-        return caches.match(event.request);
+      .catch(async () => {
+        // Ak fetch zlyhá alebo timeout, skúsiť cache
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        // Ak nie je v cache a je to navigačný request, zobraziť offline stránku
+        if (event.request.mode === 'navigate') {
+          const offlinePage = await caches.match(OFFLINE_PAGE);
+          if (offlinePage) {
+            return offlinePage;
+          }
+        }
+
+        // Fallback pre ostatné requesty
+        return new Response('Offline - obsah nie je dostupný', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: new Headers({ 'Content-Type': 'text/plain; charset=utf-8' })
+        });
       })
   );
 });

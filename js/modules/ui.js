@@ -99,19 +99,37 @@ export function applyDarkMode(isDark) {
 
 /**
  * Aktualizuje zobrazenie celkových štatistík
+ * Používa textContent namiesto innerHTML pre bezpečnosť (XSS ochrana)
  */
 export function updateTotalDisplay(stats) {
     const totalSalaryDiv = document.getElementById('totalSalary');
     if (!totalSalaryDiv) return;
 
-    totalSalaryDiv.innerHTML = `
-        Počet odpracovaných dní: ${stats.daysWithEntries}<br>
-        Celkový odpracovaný čas: ${stats.totalHours}h ${stats.totalMinutesRemainder}m (${stats.totalDecimalHours} h)<br>
-        Celková hrubá mzda: ${stats.totalGrossSalary}€<br>
-        Celková čistá mzda: ${stats.totalNetSalary}€<br>
-        Priemerná čistá mzda: ${stats.averageNetSalary}€<br>
-        <strong>Priemerný odpracovaný čas: ${stats.averageHours}h ${stats.averageMinutes}m (${stats.averageDecimalHours} h)</strong>
-    `;
+    // Vyčistíme obsah
+    totalSalaryDiv.textContent = '';
+
+    // Vytvoríme elementy bezpečne pomocou DOM API
+    const lines = [
+        `Počet odpracovaných dní: ${stats.daysWithEntries}`,
+        `Celkový odpracovaný čas: ${stats.totalHours}h ${stats.totalMinutesRemainder}m (${stats.totalDecimalHours} h)`,
+        `Celková hrubá mzda: ${stats.totalGrossSalary}€`,
+        `Celková čistá mzda: ${stats.totalNetSalary}€`,
+        `Priemerná čistá mzda: ${stats.averageNetSalary}€`
+    ];
+
+    lines.forEach((line, index) => {
+        const span = document.createElement('span');
+        span.textContent = line;
+        totalSalaryDiv.appendChild(span);
+        if (index < lines.length) {
+            totalSalaryDiv.appendChild(document.createElement('br'));
+        }
+    });
+
+    // Posledný riadok tučným písmom
+    const strong = document.createElement('strong');
+    strong.textContent = `Priemerný odpracovaný čas: ${stats.averageHours}h ${stats.averageMinutes}m (${stats.averageDecimalHours} h)`;
+    totalSalaryDiv.appendChild(strong);
 }
 
 /**
