@@ -46,9 +46,9 @@ export async function saveBackup(data, backupName = null) {
         try {
             localStorage.setItem(name, JSON.stringify(snapshot));
             results.localStorage = true;
-            console.log(`✅ Backup uložený do localStorage: ${name}`);
+            // removed for production
         } catch (error) {
-            console.warn('⚠️ Nemožno uložiť do localStorage (pravdepodobne plný):', error.message);
+            // removed for production
         }
 
         // 2. Uloženie do IndexedDB
@@ -57,23 +57,23 @@ export async function saveBackup(data, backupName = null) {
             const saved = await saveToIndexedDB(name, snapshot);
             results.indexedDB = saved;
             if (saved) {
-                console.log(`✅ Backup uložený do IndexedDB: ${name}`);
+                // removed for production
             }
         } else {
-            console.warn('⚠️ IndexedDB nie je dostupná');
+            // removed for production
         }
 
         results.success = results.localStorage || results.indexedDB;
 
         if (results.success) {
-            console.log(`✅ Backup ${name} úspešne vytvorený`);
+            // removed for production
         } else {
-            console.error('❌ Zlyhalo uloženie backupu do všetkých úložísk');
+            // removed for production
         }
 
         return { name, ...results };
     } catch (error) {
-        console.error('❌ Chyba pri vytváraní backupu:', error);
+        // removed for production
         return { name, ...results };
     }
 }
@@ -88,7 +88,7 @@ export async function loadBackup(backupName) {
         if (isIDBAvailable) {
             const data = await loadFromIndexedDB(backupName);
             if (data) {
-                console.log(`✅ Backup načítaný z IndexedDB: ${backupName}`);
+                // removed for production
                 return data;
             }
         }
@@ -96,14 +96,14 @@ export async function loadBackup(backupName) {
         // Ak nie je v IndexedDB, skús localStorage
         const localData = localStorage.getItem(backupName);
         if (localData) {
-            console.log(`✅ Backup načítaný z localStorage: ${backupName}`);
+            // removed for production
             return JSON.parse(localData);
         }
 
-        console.warn(`⚠️ Backup ${backupName} nenájdený v žiadnom úložisku`);
+        // removed for production
         return null;
     } catch (error) {
-        console.error('❌ Chyba pri načítavaní backupu:', error);
+        // removed for production
         return null;
     }
 }
@@ -128,7 +128,7 @@ export async function listBackups() {
                         size: JSON.stringify(data).length
                     });
                 } catch (error) {
-                    console.warn(`Chyba pri parsovaní backupu ${key}:`, error);
+                    // removed for production
                 }
             }
         }
@@ -152,10 +152,10 @@ export async function listBackups() {
         // Zoradi podľa času (najnovšie prvé)
         backups.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-        console.log(`📋 Nájdené ${backups.length} backupov`);
+        // removed for production
         return backups;
     } catch (error) {
-        console.error('❌ Chyba pri získavaní zoznamu backupov:', error);
+        // removed for production
         return [];
     }
 }
@@ -177,7 +177,7 @@ export async function restoreFromBackup(backupName) {
 
         // Overenie verzie backupu
         if (backup.version !== BACKUP_VERSION) {
-            console.warn(`⚠️ Backup má inú verziu: ${backup.version} vs ${BACKUP_VERSION}`);
+            // removed for production
         }
 
         // Vytvorenie zálohy pred obnovením (safety backup)
@@ -193,8 +193,8 @@ export async function restoreFromBackup(backupName) {
         const success = saveAllData(backup.data);
 
         if (success) {
-            console.log(`✅ Dáta úspešne obnovené z backupu: ${backupName}`);
-            console.log(`📅 Backup vytvorený: ${backup.timestamp}`);
+            // removed for production
+            // removed for production
             return {
                 success: true,
                 backup: backup,
@@ -204,7 +204,7 @@ export async function restoreFromBackup(backupName) {
             throw new Error('Zlyhalo uloženie obnovených dát');
         }
     } catch (error) {
-        console.error('❌ Chyba pri obnovovaní backupu:', error);
+        // removed for production
         return {
             success: false,
             error: error.message,
@@ -218,23 +218,23 @@ export async function restoreFromBackup(backupName) {
  */
 export async function autoBackup(data) {
     try {
-        console.log('🔄 Spúšťam automatické zálohovanie...');
+        // removed for production
 
         // Vytvorenie novej zálohy
         const result = await saveBackup(data, `${BACKUP_PREFIX}auto_${Date.now()}`);
 
         if (!result.success) {
-            console.warn('⚠️ Automatické zálohovanie zlyhalo');
+            // removed for production
             return false;
         }
 
         // Čistenie starých automatických záloh
         await cleanupOldBackups();
 
-        console.log('✅ Automatické zálohovanie dokončené');
+        // removed for production
         return true;
     } catch (error) {
-        console.error('❌ Chyba pri automatickom zálohovaní:', error);
+        // removed for production
         return false;
     }
 }
@@ -255,13 +255,13 @@ async function cleanupOldBackups() {
                     localStorage.removeItem(backup.name);
                 }
                 // IndexedDB cleanup by sa mal spraviť cez indexeddb modul
-                console.log(`🗑️ Vymazaná stará záloha: ${backup.name}`);
+                // removed for production
             }
 
-            console.log(`🧹 Vymazaných ${toDelete.length} starých záloh`);
+            // removed for production
         }
     } catch (error) {
-        console.error('Chyba pri čistení starých záloh:', error);
+        // removed for production
     }
 }
 
@@ -269,7 +269,7 @@ async function cleanupOldBackups() {
  * Vytvorí automatický backup interval
  */
 export function startAutoBackup(getData) {
-    console.log(`🕐 Automatické zálohovanie nastavené na každých ${AUTO_BACKUP_INTERVAL / 1000 / 60} minút`);
+    // removed for production
 
     return setInterval(async () => {
         const data = getData();
@@ -283,7 +283,7 @@ export function startAutoBackup(getData) {
 export function stopAutoBackup(intervalId) {
     if (intervalId) {
         clearInterval(intervalId);
-        console.log('⏹️ Automatické zálohovanie zastavené');
+        // removed for production
     }
 }
 
@@ -305,10 +305,10 @@ export function exportBackupToFile(data, filename = null) {
 
         URL.revokeObjectURL(url);
 
-        console.log(`✅ Backup exportovaný do súboru: ${name}`);
+        // removed for production
         return true;
     } catch (error) {
-        console.error('❌ Chyba pri exporte backupu:', error);
+        // removed for production
         return false;
     }
 }
@@ -336,10 +336,10 @@ export function importBackupFromFile(callback) {
                 }
 
                 if (backup.version !== BACKUP_VERSION) {
-                    console.warn(`⚠️ Importovaný backup má inú verziu: ${backup.version}`);
+                    // removed for production
                 }
 
-                console.log(`✅ Backup importovaný zo súboru (vytvorený: ${backup.timestamp})`);
+                // removed for production
 
                 if (callback) {
                     callback({
@@ -348,7 +348,7 @@ export function importBackupFromFile(callback) {
                     });
                 }
             } catch (error) {
-                console.error('❌ Chyba pri importe backupu:', error);
+                // removed for production
                 if (callback) {
                     callback({
                         success: false,

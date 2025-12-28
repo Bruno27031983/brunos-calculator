@@ -17,13 +17,13 @@ export function initDB() {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
         request.onerror = () => {
-            console.error('Chyba pri otváraní IndexedDB:', request.error);
+            // removed for production
             reject(request.error);
         };
 
         request.onsuccess = () => {
             db = request.result;
-            console.log('IndexedDB úspešne inicializovaná');
+            // removed for production
             resolve(db);
         };
 
@@ -34,7 +34,7 @@ export function initDB() {
             if (!db.objectStoreNames.contains(STORE_NAME)) {
                 const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'key' });
                 objectStore.createIndex('timestamp', 'timestamp', { unique: false });
-                console.log('Object store vytvorený');
+                // removed for production
             }
         };
     });
@@ -62,17 +62,17 @@ export async function saveToIndexedDB(key, value) {
             const request = objectStore.put(data);
 
             request.onsuccess = () => {
-                console.log(`Dáta uložené do IndexedDB pod kľúčom: ${key}`);
+                // removed for production
                 resolve(true);
             };
 
             request.onerror = () => {
-                console.error('Chyba pri ukladaní do IndexedDB:', request.error);
+                // removed for production
                 reject(request.error);
             };
         });
     } catch (error) {
-        console.error('Chyba v saveToIndexedDB:', error);
+        // removed for production
         return false;
     }
 }
@@ -93,21 +93,21 @@ export async function loadFromIndexedDB(key) {
 
             request.onsuccess = () => {
                 if (request.result) {
-                    console.log(`Dáta načítané z IndexedDB: ${key}`);
+                    // removed for production
                     resolve(request.result.value);
                 } else {
-                    console.log(`Žiadne dáta pre kľúč: ${key}`);
+                    // removed for production
                     resolve(null);
                 }
             };
 
             request.onerror = () => {
-                console.error('Chyba pri načítavaní z IndexedDB:', request.error);
+                // removed for production
                 reject(request.error);
             };
         });
     } catch (error) {
-        console.error('Chyba v loadFromIndexedDB:', error);
+        // removed for production
         return null;
     }
 }
@@ -127,17 +127,17 @@ export async function deleteFromIndexedDB(key) {
             const request = objectStore.delete(key);
 
             request.onsuccess = () => {
-                console.log(`Dáta vymazané z IndexedDB: ${key}`);
+                // removed for production
                 resolve(true);
             };
 
             request.onerror = () => {
-                console.error('Chyba pri vymazávaní z IndexedDB:', request.error);
+                // removed for production
                 reject(request.error);
             };
         });
     } catch (error) {
-        console.error('Chyba v deleteFromIndexedDB:', error);
+        // removed for production
         return false;
     }
 }
@@ -161,12 +161,12 @@ export async function getAllKeys() {
             };
 
             request.onerror = () => {
-                console.error('Chyba pri získavaní kľúčov:', request.error);
+                // removed for production
                 reject(request.error);
             };
         });
     } catch (error) {
-        console.error('Chyba v getAllKeys:', error);
+        // removed for production
         return [];
     }
 }
@@ -190,12 +190,12 @@ export async function getAllData() {
             };
 
             request.onerror = () => {
-                console.error('Chyba pri získavaní všetkých dát:', request.error);
+                // removed for production
                 reject(request.error);
             };
         });
     } catch (error) {
-        console.error('Chyba v getAllData:', error);
+        // removed for production
         return [];
     }
 }
@@ -215,17 +215,17 @@ export async function clearAllData() {
             const request = objectStore.clear();
 
             request.onsuccess = () => {
-                console.log('Všetky dáta vymazané z IndexedDB');
+                // removed for production
                 resolve(true);
             };
 
             request.onerror = () => {
-                console.error('Chyba pri vymazávaní dát:', request.error);
+                // removed for production
                 reject(request.error);
             };
         });
     } catch (error) {
-        console.error('Chyba v clearAllData:', error);
+        // removed for production
         return false;
     }
 }
@@ -235,7 +235,7 @@ export async function clearAllData() {
  */
 export async function isIndexedDBAvailable() {
     if (!window.indexedDB) {
-        console.warn('IndexedDB nie je podporovaná v tomto prehliadači');
+        // removed for production
         return false;
     }
 
@@ -243,7 +243,7 @@ export async function isIndexedDBAvailable() {
         await initDB();
         return true;
     } catch (error) {
-        console.error('IndexedDB nie je dostupná:', error);
+        // removed for production
         return false;
     }
 }

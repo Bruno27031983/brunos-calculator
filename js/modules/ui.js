@@ -56,9 +56,9 @@ export function updateDataSizeDisplay() {
 
     if (isOverLimit) {
         showError(`Aktuálna veľkosť dát (${kilobytes} KB) prekročila maximálnu povolenú veľkosť (${MAX_DATA_SIZE_KB} KB). Pokúste sa znížiť množstvo uložených dát.`);
-        console.warn('Dáta prekročili limit veľkosti.');
+        // removed for production
     } else {
-        console.log(`Aktuálna veľkosť dát: ${kilobytes} KB (${percentageUsed}%)`);
+        // removed for production
     }
 }
 
@@ -94,7 +94,7 @@ export function applyDarkMode(isDark) {
         }
     }
 
-    console.log(`Tmavý režim ${isDark ? 'aktivovaný' : 'deaktivovaný'}`);
+    // removed for production
 }
 
 /**

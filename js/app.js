@@ -139,14 +139,14 @@ class BrunosCalculator {
      * Inicializácia aplikácie
      */
     async init() {
-        console.log('Inicializácia Bruno\'s Calculator...');
+        // removed for production
 
         // Inicializácia IndexedDB
         try {
             await initDB();
-            console.log('✅ IndexedDB inicializovaná');
+            // removed for production
         } catch (error) {
-            console.warn('⚠️ IndexedDB nie je dostupná:', error);
+            // removed for production
         }
 
         // Inicializácia Persistent Storage
@@ -157,11 +157,11 @@ class BrunosCalculator {
             this.updatePersistenceStatusUI(persistenceResult);
 
             if (persistenceResult.persistence.granted) {
-                console.log('✅ Trvalé úložisko AKTÍVNE - dáta chránené');
+                // removed for production
             } else if (persistenceResult.persistence.supported) {
-                console.warn('⚠️ Trvalé úložisko ODMIETNUTÉ - odporúčame povoliť');
+                // removed for production
             } else {
-                console.warn('⚠️ Trvalé úložisko nie je podporované v tomto prehliadači');
+                // removed for production
             }
 
             // Kontrola zdravia úložiska
@@ -169,7 +169,7 @@ class BrunosCalculator {
                 showWarning(persistenceResult.health.message + '\n\nOdporúčame exportovať zálohy do súborov!', 5000);
             }
         } catch (error) {
-            console.warn('⚠️ Chyba pri inicializácii persistence:', error);
+            // removed for production
             this.updatePersistenceStatusUI({ persistence: { supported: false, granted: false } });
         }
 
@@ -200,7 +200,7 @@ class BrunosCalculator {
         // Vytvorenie prvotnej zálohy
         await this.createInitialBackup();
 
-        console.log('✅ Aplikácia inicializovaná s backup ochranou');
+        // removed for production
     }
 
     /**
@@ -257,7 +257,7 @@ class BrunosCalculator {
         this.decimalPlaces = data.decimalPlaces;
         this.employeeName = data.employeeName;
 
-        console.log('Dáta načítané:', { hourlyWage: this.hourlyWage, taxRate: this.taxRate, decimalPlaces: this.decimalPlaces });
+        // removed for production
     }
 
     /**
@@ -335,7 +335,7 @@ class BrunosCalculator {
     createTable() {
         clearWorkDaysTable();
 
-        console.log(`Vytváranie tabuľky pre ${getMonthName(this.currentMonth)} ${this.currentYear}`);
+        // removed for production
 
         const currentDay = this.currentDate.getDate();
         const currentMonthIndex = this.currentDate.getMonth();
@@ -579,7 +579,7 @@ class BrunosCalculator {
             },
             (error) => {
                 // Chyba pri importe
-                console.error('Chyba pri importe:', error);
+                // removed for production
                 showError(`Chyba pri importe dát z Excelu: ${error.message}`);
             }
         );
@@ -590,7 +590,7 @@ class BrunosCalculator {
      */
     handleMonthChange() {
         this.currentMonth = parseInt(document.getElementById('monthSelect').value);
-        console.log(`Zmena mesiaca: ${getMonthName(this.currentMonth)}`);
+        // removed for production
         this.createTable();
         this.calculateTotal();
     }
@@ -600,7 +600,7 @@ class BrunosCalculator {
      */
     handleYearChange() {
         this.currentYear = parseInt(document.getElementById('yearSelect').value);
-        console.log(`Zmena roka: ${this.currentYear}`);
+        // removed for production
         this.createTable();
         this.calculateTotal();
     }
@@ -610,7 +610,7 @@ class BrunosCalculator {
      */
     handleDecimalPlacesChange() {
         this.decimalPlaces = parseInt(document.getElementById('decimalPlacesSelect').value);
-        console.log(`Zmena desatinných miest: ${this.decimalPlaces}`);
+        // removed for production
 
         const daysInMonth = getDaysInMonth(this.currentYear, this.currentMonth);
         for (let i = 1; i <= daysInMonth; i++) {
@@ -634,7 +634,7 @@ class BrunosCalculator {
             showInfo('Niektoré znaky boli odstránené z mena pre bezpečnosť.');
         }
 
-        console.log(`Zmena mena pracovníka: ${this.employeeName}`);
+        // removed for production
         this.debouncedSave();
     }
 
@@ -661,7 +661,7 @@ class BrunosCalculator {
 
         this.hourlyWage = wageValidation.value;
         this.taxRate = taxValidation.value / 100;
-        console.log(`Zmena nastavení: mzda=${this.hourlyWage}, dane=${this.taxRate * 100}%`);
+        // removed for production
 
         const daysInMonth = getDaysInMonth(this.currentYear, this.currentMonth);
         for (let i = 1; i <= daysInMonth; i++) {
@@ -683,7 +683,7 @@ class BrunosCalculator {
                 return event.returnValue;
             }
         });
-        console.log('🛡️ Ochrana pred stratou dát aktivovaná');
+        // removed for production
     }
 
     /**
@@ -691,7 +691,7 @@ class BrunosCalculator {
      */
     startAutoBackupSystem() {
         this.autoBackupInterval = startAutoBackup(() => this.getAllData());
-        console.log('🔄 Automatické zálohovanie spustené');
+        // removed for production
     }
 
     /**
@@ -711,9 +711,9 @@ class BrunosCalculator {
         try {
             const data = this.getAllData();
             await saveBackup(data, 'backup_initial_' + Date.now());
-            console.log('✅ Prvotná záloha vytvorená');
+            // removed for production
         } catch (error) {
-            console.warn('⚠️ Nepodarilo sa vytvoriť prvotný backup:', error);
+            // removed for production
         }
     }
 
@@ -746,7 +746,7 @@ class BrunosCalculator {
                 showWarning('Záloha sa nepodarila vytvoriť v žiadnom úložisku.');
             }
         } catch (error) {
-            console.error('Chyba pri vytváraní manuálnej zálohy:', error);
+            // removed for production
             showError('Chyba pri vytváraní zálohy.');
         }
     }
@@ -765,7 +765,7 @@ class BrunosCalculator {
                 showError('Chyba pri exporte zálohy.');
             }
         } catch (error) {
-            console.error('Chyba pri exporte zálohy:', error);
+            // removed for production
             showError('Chyba pri exporte zálohy.');
         }
     }
@@ -868,7 +868,7 @@ class BrunosCalculator {
                 await this.showRestoreDialog(backups);
             }
         } catch (error) {
-            console.error('Chyba pri zobrazovaní záloh:', error);
+            // removed for production
             showError('Chyba pri načítavaní záloh.');
         }
     }
@@ -941,7 +941,7 @@ class BrunosCalculator {
                 type: 'info'
             });
         } catch (error) {
-            console.error('Chyba pri zobrazovaní storage info:', error);
+            // removed for production
             showError('Chyba pri získavaní informácií o úložisku.');
         }
     }
@@ -993,10 +993,10 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
             .then((registration) => {
-                console.log('Service Worker zaregistrovaný:', registration.scope);
+                // removed for production
             })
             .catch((error) => {
-                console.log('Service Worker registrácia zlyhala:', error);
+                // removed for production
             });
     });
 }

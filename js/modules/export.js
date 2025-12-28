@@ -110,10 +110,10 @@ export function exportToPDF(year, month, employeeName, totalSummary) {
         const filename = `brunos-calculator-report-${data.monthName}-${data.year}.pdf`;
         doc.save(filename);
 
-        console.log(`PDF súbor ${filename} bol úspešne vytvorený`);
+        // removed for production
         return true;
     } catch (error) {
-        console.error('Chyba pri exporte do PDF:', error);
+        // removed for production
         showError('Nastala chyba pri exporte do PDF.');
         return false;
     }
@@ -154,10 +154,10 @@ export function exportToExcel(year, month, employeeName) {
         const filename = `brunos-calculator-report-${data.monthName}-${data.year}.xlsx`;
         XLSX.writeFile(wb, filename);
 
-        console.log(`Excel súbor ${filename} bol úspešne vytvorený`);
+        // removed for production
         return true;
     } catch (error) {
-        console.error('Chyba pri exporte do Excelu:', error);
+        // removed for production
         showError('Nastala chyba pri exporte do Excelu.');
         return false;
     }
@@ -189,10 +189,10 @@ export function sendPDF(year, month, employeeName, totalSummary) {
                 text: `Pozrite si výkaz práce za ${data.monthName} ${data.year}`
             })
             .then(() => {
-                console.log('PDF bolo úspešne odoslané');
+                // removed for production
             })
             .catch(error => {
-                console.error('Chyba pri odosielaní PDF:', error);
+                // removed for production
                 showError('Nastala chyba pri odosielaní PDF.');
             });
             return true;
@@ -201,7 +201,7 @@ export function sendPDF(year, month, employeeName, totalSummary) {
             return false;
         }
     } catch (error) {
-        console.error('Chyba pri vytváraní PDF na odoslanie:', error);
+        // removed for production
         showError('Nastala chyba pri vytváraní PDF.');
         return false;
     }
@@ -231,7 +231,7 @@ export function importFromExcel(year, month, onSuccess, onError) {
                 const worksheet = workbook.Sheets[firstSheetName];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                console.log('Načítané dáta z Excelu:', jsonData);
+                // removed for production
 
                 // Validácia dát
                 if (jsonData.length < 4) {
@@ -268,20 +268,20 @@ export function importFromExcel(year, month, onSuccess, onError) {
                 for (let i = 3; i < jsonData.length; i++) {
                     const row = jsonData[i];
                     if (row.length < 7) {
-                        console.warn(`Riadok ${i+1} má nedostatočné množstvo údajov:`, row);
+                        // removed for production
                         continue;
                     }
 
                     const dayInfo = row[0];
                     const dayMatch = dayInfo.toString().match(/(?:Deň )?(\d+) \((.+)\)/);
                     if (!dayMatch) {
-                        console.warn(`Riadok ${i+1} má neplatný formát dňa:`, dayInfo);
+                        // removed for production
                         continue;
                     }
 
                     const day = parseInt(dayMatch[1]);
                     if (isNaN(day) || day < 1 || day > daysInMonth) {
-                        console.warn(`Riadok ${i+1} má neplatné číslo dňa:`, day);
+                        // removed for production
                         continue;
                     }
 
@@ -302,9 +302,9 @@ export function importFromExcel(year, month, onSuccess, onError) {
                     });
                 }
 
-                console.log('Import z Excelu úspešne dokončený');
+                // removed for production
             } catch (error) {
-                console.error('Chyba pri importe dát:', error);
+                // removed for production
                 if (onError) {
                     onError(error);
                 } else {

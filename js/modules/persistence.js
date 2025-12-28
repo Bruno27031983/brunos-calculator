@@ -8,7 +8,7 @@
  */
 export async function requestPersistentStorage() {
     if (!navigator.storage || !navigator.storage.persist) {
-        console.warn('⚠️ Persistent Storage API nie je podporované');
+        // removed for production
         return {
             granted: false,
             supported: false,
@@ -20,7 +20,7 @@ export async function requestPersistentStorage() {
         const isPersisted = await navigator.storage.persisted();
 
         if (isPersisted) {
-            console.log('✅ Úložisko je už trvalé (persistentné)');
+            // removed for production
             return {
                 granted: true,
                 supported: true,
@@ -33,7 +33,7 @@ export async function requestPersistentStorage() {
         const granted = await navigator.storage.persist();
 
         if (granted) {
-            console.log('✅ Trvalé úložisko POVOLENÉ - dáta nebudú automaticky vymazané');
+            // removed for production
             return {
                 granted: true,
                 supported: true,
@@ -41,7 +41,7 @@ export async function requestPersistentStorage() {
                 message: 'Trvalé úložisko povolené! Vaše dáta sú chránené.'
             };
         } else {
-            console.warn('⚠️ Trvalé úložisko ODMIETNUTÉ - dáta môžu byť vymazané pri nedostatku miesta');
+            // removed for production
             return {
                 granted: false,
                 supported: true,
@@ -50,7 +50,7 @@ export async function requestPersistentStorage() {
             };
         }
     } catch (error) {
-        console.error('❌ Chyba pri žiadosti o trvalé úložisko:', error);
+        // removed for production
         return {
             granted: false,
             supported: true,
@@ -71,7 +71,7 @@ export async function isPersisted() {
     try {
         return await navigator.storage.persisted();
     } catch (error) {
-        console.error('Chyba pri kontrole persistence:', error);
+        // removed for production
         return false;
     }
 }
@@ -81,7 +81,7 @@ export async function isPersisted() {
  */
 export async function getStorageEstimate() {
     if (!navigator.storage || !navigator.storage.estimate) {
-        console.warn('⚠️ Storage Estimate API nie je podporované');
+        // removed for production
         return null;
     }
 
@@ -103,11 +103,11 @@ export async function getStorageEstimate() {
             availableMB: (available / (1024 * 1024)).toFixed(2)
         };
 
-        console.log(`💾 Úložisko: ${result.usageMB} MB použité z ${result.quotaMB} MB (${result.percentUsed}%)`);
+        // removed for production
 
         return result;
     } catch (error) {
-        console.error('Chyba pri získavaní odhadu úložiska:', error);
+        // removed for production
         return null;
     }
 }
@@ -186,7 +186,7 @@ export async function hasEnoughSpace(requiredBytes) {
     const hasSpace = estimate.available >= requiredBytes;
 
     if (!hasSpace) {
-        console.warn(`⚠️ Nedostatok miesta! Potrebné: ${(requiredBytes / 1024).toFixed(2)} KB, Dostupné: ${estimate.availableMB} MB`);
+        // removed for production
     }
 
     return hasSpace;
@@ -224,7 +224,7 @@ export async function checkStorageHealth() {
         health.message = `✅ Úložisko je v poriadku (${percentUsed}% použité)`;
     }
 
-    console.log(health.message);
+    // removed for production
 
     return health;
 }
@@ -233,7 +233,7 @@ export async function checkStorageHealth() {
  * Inicializácia persistence systému
  */
 export async function initPersistence() {
-    console.log('🔒 Inicializácia persistence systému...');
+    // removed for production
 
     // Požiadať o persistent storage
     const persistResult = await requestPersistentStorage();
@@ -250,7 +250,7 @@ export async function initPersistence() {
         status: status
     };
 
-    console.log('🔒 Persistence systém inicializovaný:', result);
+    // removed for production
 
     return result;
 }

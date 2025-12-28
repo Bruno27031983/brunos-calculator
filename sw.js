@@ -48,17 +48,17 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('✅ Cache otvorený');
+        // removed for production
         // Cache súbory individuálne, aby jeden zlyhanie nespôsobilo celkové zlyhanie
         return Promise.allSettled(
           urlsToCache.map(url =>
             cache.add(url).catch(err => {
-              console.warn(`⚠️ Nepodarilo sa cachovať ${url}:`, err);
+              // removed for production
               return null;
             })
           )
         ).then(() => {
-          console.log('✅ Service Worker nainštalovaný');
+          // removed for production
         });
       })
   );
@@ -73,7 +73,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('Odstránenie starej cache:', cacheName);
+            // removed for production
             return caches.delete(cacheName);
           }
         })

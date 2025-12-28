@@ -13,7 +13,7 @@ function getItem(key, defaultValue = null) {
         const item = localStorage.getItem(key);
         return item !== null ? JSON.parse(item) : defaultValue;
     } catch (error) {
-        console.error(`Chyba pri načítavaní ${key} z localStorage:`, error);
+        // removed for production
         return defaultValue;
     }
 }
@@ -26,7 +26,7 @@ function setItem(key, value) {
         localStorage.setItem(key, JSON.stringify(value));
         return true;
     } catch (error) {
-        console.error(`Chyba pri ukladaní ${key} do localStorage:`, error);
+        // removed for production
         return false;
     }
 }
@@ -55,7 +55,7 @@ export function calculateDataSize() {
             isOverLimit: bytes > MAX_DATA_SIZE
         };
     } catch (error) {
-        console.error('Chyba pri výpočte veľkosti dát:', error);
+        // removed for production
         return null;
     }
 }
@@ -179,7 +179,7 @@ export function saveAllData(data) {
                    saveEmployeeName(employeeName);
 
     if (success) {
-        console.log('Všetky dáta úspešne uložené');
+        // removed for production
     }
 
     return success;
