@@ -129,7 +129,7 @@ input[type="tel"], input[type="number"], input[type="text"] {
 
 .btn {
     flex: 1 1 150px;
-    padding: 10px 20px;
+    padding: 28px 20px;
     color: white;
     border: none;
     border-radius: 5px;
@@ -336,7 +336,7 @@ body.dark-mode .autor-info {
     .btn {
         flex: 1 1 auto;
         font-size: 14px;
-        padding: 8px 16px;
+        padding: 24px 16px;
         margin: 5px 0;
     }
     #totalSalary {
@@ -359,7 +359,7 @@ body.dark-mode .autor-info {
     }
     .btn {
         font-size: 12px;
-        padding: 6px 12px;
+        padding: 22px 12px;
     }
     .settings label {
         font-size: 0.9em;
