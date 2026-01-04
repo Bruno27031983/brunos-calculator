@@ -129,7 +129,7 @@ input[type="tel"], input[type="number"], input[type="text"] {
 
 .btn {
     flex: 1 1 150px;
-    padding: 28px 20px;
+    padding: 10px 20px;
     color: white;
     border: none;
     border-radius: 5px;
@@ -137,6 +137,11 @@ input[type="tel"], input[type="number"], input[type="text"] {
     font-size: 16px;
     margin: 5px;
     transition: background-color 0.3s ease;
+}
+
+/* Väčšie tlačidlá v btn-container */
+.btn-container .btn {
+    padding: 28px 20px;
 }
 
 .reset-btn {
@@ -336,8 +341,11 @@ body.dark-mode .autor-info {
     .btn {
         flex: 1 1 auto;
         font-size: 14px;
-        padding: 24px 16px;
+        padding: 8px 16px;
         margin: 5px 0;
+    }
+    .btn-container .btn {
+        padding: 24px 16px;
     }
     #totalSalary {
         font-size: 16px;
@@ -359,6 +367,9 @@ body.dark-mode .autor-info {
     }
     .btn {
         font-size: 12px;
+        padding: 6px 12px;
+    }
+    .btn-container .btn {
         padding: 22px 12px;
     }
     .settings label {
